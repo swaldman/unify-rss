@@ -15,7 +15,7 @@ object RssMerger:
 
   @tailrec
   private def namespaces( accum : List[(String,String)], binding : NamespaceBinding ) : List[(String,String)] =
-    if binding == null then accum else namespaces( (binding.prefix, binding.uri ) :: accum, binding.parent)
+    if binding == TopScope || binding == null then accum else namespaces( (binding.prefix, binding.uri ) :: accum, binding.parent)
 
   private def namespaces( accum : List[(String,String)], bindingSeq : Seq[NamespaceBinding] ) : List[(String,String)] =
     bindingSeq.foldLeft( accum )( (soFar, next) => namespaces( soFar, next ) )
@@ -35,13 +35,24 @@ object RssMerger:
       noDupTups.toMap
 
   def stripScopes( root : Node ) : Node =
+    // didn't work, namespaces reappeared, don't understand why exactly,
+    // i think maybe it's because we want to keep the prefixes in attributed
+    /*
     val rule = new RewriteRule:
       override def transform(n: Node) : Seq[Node] =
         n match
-          case e : Elem => e.copy(scope = null)
+          case e : Elem => e.copy(scope = TopScope)
           case other => other
     val xform = new RuleTransformer(rule)
     xform(root)
+    */
+    // this does work,
+    // from https://stackoverflow.com/questions/12535014/scala-completely-remove-namespace-from-xml
+    def clearScope(x: Node):Node = x match {
+      case e:Elem => e.copy(scope=TopScope, child = e.child.map(clearScope))
+      case o => o
+    }
+    clearScope(root)
 
   def toText( node : Node ) : String =
     val pp = new PrettyPrinter(120,2)
@@ -57,9 +68,10 @@ object RssMerger:
         Instant.from( RssDateTimeFormatter.parse(pds.head) )
     Ordering.by[Elem,Instant]( pubDate ).reverse
 
-  def merge(spec : Element.Channel.Spec, roots : Elem* ) : Element.Channel =
+  def merge(spec : Element.Channel.Spec, roots : Elem* ) : Element.Rss =
     val allNamespaces = extractNamespaces(roots*)
     val unscoped = roots.map( stripScopes ).map( _.asInstanceOf[Elem] )
     val arssNamespaces = allNamespaces.map( (k,v) => Namespace(k,v) ).toList
-    val allItems = unscoped.flatMap( _ \ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
-    Element.Channel.create(spec, Iterable.empty[Element.Item]).overNamespaces(arssNamespaces).withExtras( allItems )
+    val allItems = unscoped.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
+    val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtras( allItems )
+    Element.Rss(channel).overNamespaces(arssNamespaces)
