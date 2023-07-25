@@ -68,10 +68,11 @@ object RssMerger:
         Instant.from( RssDateTimeFormatter.parse(pds.head) )
     Ordering.by[Elem,Instant]( pubDate ).reverse
 
-  def merge(spec : Element.Channel.Spec, roots : Elem* ) : Element.Rss =
+  def merge(spec : Element.Channel.Spec, itemLimit : Int, roots : Elem* ) : Element.Rss =
     val allNamespaces = extractNamespaces(roots*)
     val unscoped = roots.map( stripScopes ).map( _.asInstanceOf[Elem] )
     val arssNamespaces = allNamespaces.map( (k,v) => Namespace(k,v) ).toList
     val allItems = unscoped.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
-    val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtras( allItems )
+    val limitedItems = allItems.take( itemLimit )
+    val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtras( limitedItems )
     Element.Rss(channel).overNamespaces(arssNamespaces)
