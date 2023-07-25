@@ -4,6 +4,8 @@ import scala.collection.*
 
 import scala.xml.Elem
 
+import java.net.URL
+
 import unstatic.UrlPath.*
 
 val linesep = System.lineSeparator
@@ -14,12 +16,10 @@ class IncompatibleDuplicateBindings(bindings : immutable.Set[(String,String)]) e
 class BadItemXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class RssFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
 
-import sttp.model.Uri
-
 case class AppConfig( serverUrl : Abs, basePathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed] )
 
 object MergedFeed:
-  class Default( override val sourceUris : immutable.Seq[Uri], val basePath : String, override val refreshSeconds : Int = 600 ) extends MergedFeed:
+  class Default( override val sourceUrls : immutable.Seq[URL], val basePath : String, override val refreshSeconds : Int = 600 ) extends MergedFeed:
     override def feedPath = Rel(s"${basePath}.rss")
     override def stubSiteContentType = "text/html"
     override def stubSitePath =
@@ -51,7 +51,7 @@ object MergedFeed:
          |</html>
          |""".stripMargin.trim
 trait MergedFeed:
-  def sourceUris                                 : immutable.Seq[Uri]
+  def sourceUrls                                 : immutable.Seq[URL]
   def title( rootElems : immutable.Seq[Elem])    : String
   def feedPath                                   : Rel
   def stubSitePath                               : Rel
