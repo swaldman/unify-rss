@@ -46,7 +46,7 @@ object AbstractMain extends ZIOAppDefault:
     val fem = feedEndpoints(appConfig)
     for
       mergedFeedRefs <- initMergedFeedRefs( appConfig )
-      _              <- periodicallyUpdateAllMergedFeedRefs( appConfig, mergedFeedRefs )
+      _              <- periodicallyResilientlyUpdateAllMergedFeedRefs( appConfig, mergedFeedRefs )
     yield ()
 
 /*

@@ -7,6 +7,8 @@ import audiofluidity.rss.Element
 import scala.xml.{Elem,XML}
 import unstatic.UrlPath.*
 
+private val ExponentialBackoffFactor = 1.5d
+
 def fetchFeed(url : URL)             : Task[Elem]                = ZIO.attemptBlocking(XML.load(url))
 def fetchFeeds(urls : Iterable[URL]) : Task[immutable.Seq[Elem]] = ZIO.collectAllPar(Chunk.fromIterable(urls.map(fetchFeed)))
 
@@ -33,10 +35,15 @@ def updateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : immut
     _     <- mergedFeedRefs(mf.feedPath).set(feed)
   yield ()
 
-def periodicallyUpdateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) : Task[Long] =
-  updateMergedFeedRef( ac, mf, mergedFeedRefs ).schedule( Schedule.fixed( Duration.fromSeconds(mf.refreshSeconds) ) )
+def retrySchedule( normalRefresh : Duration, firstErrorRetry : Duration = Duration.fromSeconds(10) ) =
+  Schedule.exponential( firstErrorRetry, ExponentialBackoffFactor ) || Schedule.fixed( normalRefresh )
 
-def periodicallyUpdateAllMergedFeedRefs( ac : AppConfig, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) =
-  val allForks = ac.mergedFeeds.map( mf => periodicallyUpdateMergedFeedRef( ac, mf, mergedFeedRefs ).forkDaemon )
+def periodicallyResilientlyUpdateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) : Task[Long] =
+  val refreshDuration = Duration.fromSeconds(mf.refreshSeconds)
+  val resilient = updateMergedFeedRef( ac, mf, mergedFeedRefs ).retry( retrySchedule( refreshDuration ) )
+  resilient.schedule( Schedule.fixed( refreshDuration ) )
+
+def periodicallyResilientlyUpdateAllMergedFeedRefs( ac : AppConfig, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) =
+  val allForks = ac.mergedFeeds.map( mf => periodicallyResilientlyUpdateMergedFeedRef( ac, mf, mergedFeedRefs ).forkDaemon )
   ZIO.collectAllDiscard( allForks )
 
