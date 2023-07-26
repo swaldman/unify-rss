@@ -5,7 +5,8 @@ import scala.xml.Elem
 import java.net.URL
 import unstatic.UrlPath.*
 
-case class AppConfig( appPath : Abs, mergedFeeds : immutable.Set[MergedFeed] )
+case class AppConfig( serverUrl : Abs, appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed] ):
+  def appPathAbs : Abs = serverUrl.embedRoot(appPathServerRooted)
 
 object MergedFeed:
   class Default(
