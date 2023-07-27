@@ -7,7 +7,8 @@ Type=simple
 User=unify-rss
 Group=unify-rss
 WorkingDirectory=/home/swaldman/development/gitproj/unify-rss
-ExecSearchPath=/usr/local/pkg/scala-cli/bin
+# ExecSearchPath=/usr/local/pkg/scala-cli/bin #Too new
+Environment=PATH=/usr/local/pkg/scala-cli/bin
 ExecStart=scala-cli ./main
 KillMode=process
 KillSignal=SIGINT
