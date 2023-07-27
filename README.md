@@ -40,11 +40,20 @@ Before you can run the server, create an object that extends
 ### examples
 
 Check out the [_interfluidity_](https://github.com/swaldman/unify-rss/tree/interfluidity)
-branch, and the object ['InterfluidityMain'](https://github.com/swaldman/unify-rss/blob/interfluidity/main/InterfluidityMain.scala) to see how this works.
+branch, and the object [`InterfluidityMain`](https://github.com/swaldman/unify-rss/blob/interfluidity/main/InterfluidityMain.scala) to see how this works.
 You'll see exactly how feeds are configured there.
 
 In the _interfluidity_ branch you can also see the `systemd` service file
 by which I am currently running this service. (There are shell-scripts as well,
 but I am not using them.)
 
+### shortcomings
+
+RSS feeds are supposed to link to the site that produces them, but since these feeds
+are generated from multiple sites, we make up a "stub site" link bank to this service.
+I have not yet implemented the serving of those "stub sites" yet though.
+
+---
+
 Let me know what you think!
+
