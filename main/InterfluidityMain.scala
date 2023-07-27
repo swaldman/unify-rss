@@ -19,11 +19,11 @@ object InterfluidityMain extends AbstractMain {
   )
 
   val AllBlogsFeed = new MergedFeed.Default(sourceUrls = allBlogs, baseName = "all-blogs", itemLimit = 25):
-    override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity all blog posts"
+    override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity all blogs"
     override def description(rootElems: immutable.Seq[Elem]): String = "Collects posts to all blogs (including the main interfluidity.com, as well as drafts.interfluidity.com and tech.interfluiduty.com) by Steve Randy Waldman"
 
   val AllBlogsAndMicroblogsFeed = new MergedFeed.Default(sourceUrls = allBlogsAndMicroblogs, baseName = "all-blogs-and-microblogs", itemLimit = 100):
-    override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity all blog posts and microblog entries"
+    override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity all blogs and microblogs"
     override def description(rootElems: immutable.Seq[Elem]): String = "Collects posts to all blogs by Steve Randy Waldman (interfludity), as well as posts to microblogs that syndicate by RSS."
 
   override val appConfig: AppConfig = AppConfig(
