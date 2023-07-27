@@ -9,11 +9,31 @@ import audiofluidity.rss.Element
 import scala.xml.{Elem,XML}
 import unstatic.UrlPath.*
 import sttp.tapir.ztapir.*
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
+import sttp.tapir.server.interceptor.log.DefaultServerLog
+import sttp.tapir.server.ziohttp.{ZioHttpInterpreter,ZioHttpServerOptions}
 
 abstract class AbstractMain extends ZIOAppDefault:
 
   def appConfig : AppConfig
+
+  val VerboseServerInterpreterOptions: ZioHttpServerOptions[Any] =
+  // modified from https://github.com/longliveenduro/zio-geolocation-tapir-tapir-starter/blob/b79c88b9b1c44a60d7c547d04ca22f12f420d21d/src/main/scala/com/tsystems/toil/Main.scala
+    ZioHttpServerOptions
+      .customiseInterceptors
+      .serverLog(
+        DefaultServerLog[Task](
+          doLogWhenReceived = msg => ZIO.succeed(println(msg)),
+          doLogWhenHandled = (msg, error) => ZIO.succeed(error.fold(println(msg))(err => println(s"msg: ${msg}, err: ${err}"))),
+          doLogAllDecodeFailures = (msg, error) => ZIO.succeed(error.fold(println(msg))(err => println(s"msg: ${msg}, err: ${err}"))),
+          doLogExceptions = (msg: String, exc: Throwable) => ZIO.succeed(println(s"msg: ${msg}, exc: ${exc}")),
+          noLog = ZIO.unit
+        )
+      )
+      .options
+
+  val DefaltServerInterpreterOptions: ZioHttpServerOptions[Any] = ZioHttpServerOptions.default.widen[Any]
+
+  def interpreterOptions( verbose : Boolean ) = if verbose then VerboseServerInterpreterOptions else DefaltServerInterpreterOptions
 
   def feedServerLogic( feedPath : Rel, mergedFeedRefs : FeedRefMap ) : Unit => UIO[Array[Byte]] =
     (_ : Unit) => mergedFeedRefs(feedPath).get.map( _.toArray )
@@ -26,12 +46,12 @@ abstract class AbstractMain extends ZIOAppDefault:
   def allServerEndpoints( ac : AppConfig, fem : FeedEndpointMap, mergedFeedRefs : FeedRefMap ) =
     ac.mergedFeeds.map( mf => feedZServerEndpoint( mf.feedPath, fem, mergedFeedRefs ) ).toList
 
-  def toHttpApp( zServerEndpoints : List[ZServerEndpoint[Any,Any]] ) =
-    ZioHttpInterpreter().toHttp( zServerEndpoints )
+  def toHttpApp( ac : AppConfig, zServerEndpoints : List[ZServerEndpoint[Any,Any]] ) =
+    ZioHttpInterpreter( interpreterOptions(ac.verbose) ).toHttp( zServerEndpoints )
 
   def server( ac : AppConfig, fem : FeedEndpointMap, mergedFeedRefs : FeedRefMap ) =
     val zServerEndpoints = allServerEndpoints(ac, fem, mergedFeedRefs)
-    val httpApp = toHttpApp(zServerEndpoints)
+    val httpApp = toHttpApp(ac, zServerEndpoints)
     Server
       .serve(httpApp.withDefaultErrorResponse)
       .provide(ZLayer.succeed(Server.Config.default.port(ac.servicePort)), Server.live)
