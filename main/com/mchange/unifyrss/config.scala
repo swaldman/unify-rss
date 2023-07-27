@@ -13,6 +13,17 @@ case class AppConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerR
       if fromUrl >= 0 then fromUrl else 80
     proxiedPort.getOrElse( fromUrlOrDefault )
 
+trait MergedFeed:
+  def sourceUrls                                    : immutable.Seq[URL]
+  def itemLimit                                     : Int
+  def title( rootElems : immutable.Seq[Elem])       : String
+  def description( rootElems : immutable.Seq[Elem]) : String
+  def feedPath                                      : Rel
+  def stubSitePath                                  : Rel
+  def stubSite( rootElems : immutable.Seq[Elem])    : String
+  def stubSiteContentType                           : String
+  def refreshSeconds                                : Int
+
 object MergedFeed:
   class Default(
     override val sourceUrls : immutable.Seq[URL],
@@ -53,13 +64,3 @@ object MergedFeed:
          |</html>
          |""".stripMargin.trim
   end Default
-trait MergedFeed:
-  def sourceUrls                                    : immutable.Seq[URL]
-  def itemLimit                                     : Int
-  def title( rootElems : immutable.Seq[Elem])       : String
-  def description( rootElems : immutable.Seq[Elem]) : String
-  def feedPath                                      : Rel
-  def stubSitePath                                  : Rel
-  def stubSite( rootElems : immutable.Seq[Elem])    : String
-  def stubSiteContentType                           : String
-  def refreshSeconds                                : Int
