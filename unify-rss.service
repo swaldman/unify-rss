@@ -6,9 +6,8 @@ After=syslog.target network.target
 Type=simple
 User=unify-rss
 Group=unify-rss
-Environment="PATH=${PATH}:/usr/local/pkg/scala-cli/bin"
 WorkingDirectory=/home/swaldman/development/gitproj/unify-rss
-ExecStart=scala-cli main
+ExecStart=/usr/local/pkg/scala-cli/bin/scala-cli main
 KillMode=process
 KillSignal=SIGINT
 TimeoutStopSec=90
