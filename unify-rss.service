@@ -6,11 +6,11 @@ After=syslog.target network.target
 Type=simple
 User=unify-rss
 Group=unify-rss
-WorkingDirectory=/home/swaldman/development/gitproj/unify-rss
+# WorkingDirectory=/home/swaldman/development/gitproj/unify-rss
 # ExecSearchPath=/usr/local/pkg/scala-cli/bin #Too new
-Environment=PATH=/usr/local/pkg/scala-cli/bin
-PassEnvironment=PATH
-ExecStart=scala-cli ./main
+# Environment=PATH=/usr/local/pkg/scala-cli/bin
+# PassEnvironment=PATH
+ExecStart=/usr/local/pkg/scala-cli/bin/scala-cli /home/swaldman/development/gitproj/unify-rss/main
 KillMode=process
 KillSignal=SIGINT
 TimeoutStopSec=90
