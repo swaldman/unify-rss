@@ -10,7 +10,7 @@ Group=unify-rss
 # ExecSearchPath=/usr/local/pkg/scala-cli/bin #Too new
 # Environment=PATH=/usr/local/pkg/scala-cli/bin
 # PassEnvironment=PATH
-ExecStart=/usr/local/pkg/scala-cli/bin/scala-cli /home/swaldman/development/gitproj/unify-rss/main
+ExecStart=/usr/local/pkg/scala-cli/bin/scala-cli run /home/swaldman/development/gitproj/unify-rss/main
 KillMode=process
 KillSignal=SIGINT
 TimeoutStopSec=90
