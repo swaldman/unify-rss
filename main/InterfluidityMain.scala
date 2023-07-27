@@ -19,11 +19,11 @@ object InterfluidityMain extends AbstractMain {
   )
 
   val AllBlogsFeed = new MergedFeed.Default(sourceUrls = allBlogs, baseName = "all-blogs", itemLimit = 25):
-    override def title(rootElems: immutable.Seq[Elem]): String = "All interfluidity / Steve Randy Waldman blog posts"
-    override def description(rootElems: immutable.Seq[Elem]): String = "Collects posts to all blogs (including the main nterfluidity.com, as well as drafts.interfluidity.com and tech.interfluiduty.com) by Steve Randy Waldman"
+    override def title(rootElems: immutable.Seq[Elem]): String = "All interfluidity blog posts"
+    override def description(rootElems: immutable.Seq[Elem]): String = "Collects posts to all blogs (including the main interfluidity.com, as well as drafts.interfluidity.com and tech.interfluiduty.com) by Steve Randy Waldman"
 
   val AllBlogsAndMicroblogsFeed = new MergedFeed.Default(sourceUrls = allBlogsAndMicroblogs, baseName = "all-blogs-and-microblogs", itemLimit = 100):
-    override def title(rootElems: immutable.Seq[Elem]): String = "All interfluidity / Steve Randy Waldman blog posts and microblog entries"
+    override def title(rootElems: immutable.Seq[Elem]): String = "All interfluidity blog posts and microblog entries"
     override def description(rootElems: immutable.Seq[Elem]): String = "Collects posts to all blogs by Steve Randy Waldman (interfludity), as well as posts to microblogs that syndicate by RSS."
 
   override val appConfig: AppConfig = AppConfig(
@@ -31,6 +31,6 @@ object InterfluidityMain extends AbstractMain {
     proxiedPort = Some(8123),
     appPathServerRooted = Rooted("/rss-extra"),
     mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed),
-    verbose = true
+    verbose = false
   )
 }
