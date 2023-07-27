@@ -4,7 +4,7 @@ I'm dividing my writing output among a number of blogs
 and microblogging sites these days. I wanted to offer
 RSS feeds that would let you subscribe to all of these at
 once, in the unlikely and rather discreditable circumstance
-that you like to read what I like.
+that you like to read what I write.
 
 ### buildless
 
