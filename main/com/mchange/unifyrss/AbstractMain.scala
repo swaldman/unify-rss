@@ -11,26 +11,9 @@ import unstatic.UrlPath.*
 import sttp.tapir.ztapir.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 
-/* abstract class */
-object AbstractMain extends ZIOAppDefault:
+abstract class AbstractMain extends ZIOAppDefault:
 
-  /* abstract */
-  val appConfig : AppConfig = AppConfig(
-    serverUrl           = Abs("https://www.interfluidity.com/"),
-    proxiedPort         = Some(8123),
-    appPathServerRooted = Rooted("/rss"),
-    mergedFeeds         = immutable.Set (
-      MergedFeed.Default(
-        sourceUrls =immutable.Seq(
-          new URL("https://drafts.interfluidity.com/feed/index.rss"),
-          new URL("https://tech.interfluidity.com/feed/index.rss"),
-          new URL("https://www.interfluidity.com/feed"),
-        ),
-        baseName = "all-blogs",
-        itemLimit = 8
-      )
-    )
-  )
+  def appConfig : AppConfig
 
   def feedServerLogic( feedPath : Rel, mergedFeedRefs : FeedRefMap ) : Unit => UIO[Array[Byte]] =
     (_ : Unit) => mergedFeedRefs(feedPath).get.map( _.toArray )
