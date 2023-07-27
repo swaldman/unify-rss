@@ -43,7 +43,7 @@ Check out the [_interfluidity_](https://github.com/swaldman/unify-rss/tree/inter
 branch, and the object [`InterfluidityMain`](https://github.com/swaldman/unify-rss/blob/interfluidity/main/InterfluidityMain.scala) to see how this works.
 You'll see exactly how feeds are configured there.
 
-In the _interfluidity_ branch you can also see the `systemd` service file
+In the _interfluidity_ branch you can also see the [`systemd` service file](https://github.com/swaldman/unify-rss/blob/interfluidity/unify-rss.service)
 by which I am currently running this service. (There are shell-scripts as well,
 but I am not using them.)
 
