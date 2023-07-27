@@ -14,4 +14,10 @@ class BadItemXml(message : String, cause : Throwable = null)                   e
 class RssFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
 
 type FeedRefMap      = immutable.Map[Rel,Ref[immutable.Seq[Byte]]]
-type FeedEndpointMap = immutable.Map[Rel,Endpoint[Unit,Unit,Unit,Array[Byte],Any]]
+type FeedEndpointMap = immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]]
+
+def fullStackTrace(t:Throwable) : String =
+  val sw = new java.io.StringWriter()
+  t.printStackTrace(new java.io.PrintWriter(sw))
+  sw.toString()
+

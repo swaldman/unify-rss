@@ -5,8 +5,13 @@ import scala.xml.Elem
 import java.net.URL
 import unstatic.UrlPath.*
 
-case class AppConfig( serverUrl : Abs, appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed] ):
+case class AppConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed] ):
   def appPathAbs : Abs = serverUrl.embedRoot(appPathServerRooted)
+  def servicePort =
+    def fromUrlOrDefault : Int =
+      val fromUrl = serverUrl.server.getPort
+      if fromUrl >= 0 then fromUrl else 80
+    proxiedPort.getOrElse( fromUrlOrDefault )
 
 object MergedFeed:
   class Default(
