@@ -30,6 +30,7 @@ object InterfluidityMain extends AbstractMain {
     serverUrl = Abs("https://www.interfluidity.com/"),
     proxiedPort = Some(8123),
     appPathServerRooted = Rooted("/rss-extra"),
-    mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed)
+    mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed),
+    verbose = true
   )
 }
