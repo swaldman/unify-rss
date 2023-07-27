@@ -5,7 +5,7 @@ import scala.xml.Elem
 import java.net.URL
 import unstatic.UrlPath.*
 
-case class AppConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed] ):
+case class AppConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed], verbose : Boolean = false ):
   def appPathAbs : Abs = serverUrl.embedRoot(appPathServerRooted)
   def servicePort =
     def fromUrlOrDefault : Int =
