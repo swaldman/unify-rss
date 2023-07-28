@@ -10,8 +10,17 @@ import scala.xml.{Elem, XML}
 import unstatic.UrlPath.*
 
 private val ExponentialBackoffFactor = 1.5d
-private val FirstErrorRetry = Duration.fromSeconds(10)
+private val FirstErrorRetry  = Duration.fromSeconds(10)
 private val InitLongestRetry = Duration.fromSeconds(600)
+
+private val QuickRetryPeriod = Duration.fromSeconds(6)
+private val QuickRetryLimit  = Duration.fromSeconds(60)
+
+def retrySchedule( normalRefresh : Duration, firstErrorRetry : Duration = FirstErrorRetry ) =
+  Schedule.exponential( firstErrorRetry, ExponentialBackoffFactor ) || Schedule.fixed( normalRefresh )
+
+val quickRetrySchedule =
+  Schedule.spaced(QuickRetryPeriod).upTo(QuickRetryLimit)
 
 private def errorEmptyFeed(mf : MergedFeed) : Elem =
   val badFeeds = mf.sourceUrls.map( u => s"'${u.toString}'").mkString(", ")
@@ -28,6 +37,8 @@ def fetchFeeds(urls : Iterable[URL]) : Task[immutable.Seq[Elem]] = ZIO.collectAl
 
 def bestAttemptFetchFeed(url : URL) : Task[Option[Elem]] =
   fetchFeed(url)
+    .logError
+    .retry( quickRetrySchedule )
     .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
 
 def bestAttemptFetchFeeds(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
@@ -62,9 +73,6 @@ def updateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : FeedR
     feed  <- mergeFeeds(ac, mf, elems)
     _     <- mergedFeedRefs(mf.feedPath).set(feed)
   yield ()
-
-def retrySchedule( normalRefresh : Duration, firstErrorRetry : Duration = FirstErrorRetry ) =
-  Schedule.exponential( firstErrorRetry, ExponentialBackoffFactor ) || Schedule.fixed( normalRefresh )
 
 def periodicallyResilientlyUpdateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) : Task[Long] =
   val refreshDuration = Duration.fromSeconds(mf.refreshSeconds)
