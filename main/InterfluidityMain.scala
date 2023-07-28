@@ -31,6 +31,6 @@ object InterfluidityMain extends AbstractMain {
     proxiedPort = Some(8123),
     appPathServerRooted = Rooted("/unify-rss"),
     mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed),
-    verbose = false
+    verbose = true
   )
 }
