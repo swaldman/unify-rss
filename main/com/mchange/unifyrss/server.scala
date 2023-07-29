@@ -43,7 +43,8 @@ def allServerEndpoints(ac: AppConfig, fem: FeedEndpointMap, mergedFeedRefs: Feed
 def toHttpApp(ac: AppConfig, zServerEndpoints: List[ZServerEndpoint[Any, Any]]) =
   ZioHttpInterpreter(interpreterOptions(ac.verbose)).toHttp(zServerEndpoints)
 
-def server(ac: AppConfig, fem: FeedEndpointMap, mergedFeedRefs: FeedRefMap) =
+def server(ac: AppConfig, mergedFeedRefs: FeedRefMap) : UIO[ExitCode] =
+  val fem = feedEndpoints( ac )
   val zServerEndpoints = allServerEndpoints(ac, fem, mergedFeedRefs)
   val httpApp = toHttpApp(ac, zServerEndpoints)
   Server

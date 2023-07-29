@@ -10,11 +10,12 @@ import scala.xml.{Elem, XML}
 import unstatic.UrlPath.*
 
 private val ExponentialBackoffFactor = 1.5d
-private val FirstErrorRetry  = Duration.fromSeconds(10)
-private val InitLongestRetry = Duration.fromSeconds(600)
 
-private val QuickRetryPeriod = Duration.fromSeconds(6)
-private val QuickRetryLimit  = Duration.fromSeconds(60)
+private val FirstErrorRetry  = 10.seconds
+private val InitLongestRetry = 600.seconds
+
+private val QuickRetryPeriod = 6.seconds
+private val QuickRetryLimit  = 60.seconds
 
 def retrySchedule( normalRefresh : Duration, firstErrorRetry : Duration = FirstErrorRetry ) =
   Schedule.exponential( firstErrorRetry, ExponentialBackoffFactor ) || Schedule.fixed( normalRefresh )
