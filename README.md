@@ -50,7 +50,7 @@ but I am not using them.)
 ### shortcomings
 
 RSS feeds are supposed to link to the site that produces them, but since these feeds
-are generated from multiple sites, we make up a "stub site" link bank to this service.
+are generated from multiple sites, we make up a "stub site" link back to this service.
 I have not yet implemented the serving of those "stub sites" yet though.
 
 ---
