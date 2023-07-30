@@ -33,24 +33,38 @@ private def errorEmptyFeed(mf : MergedFeed) : Elem =
   )
   Element.Rss(channel).toElem
 
-def fetchFeed(url : URL)             : Task[Elem]                = ZIO.attemptBlocking(XML.load(url))
-def fetchFeeds(urls : Iterable[URL]) : Task[immutable.Seq[Elem]] = ZIO.collectAllPar(Chunk.fromIterable(urls.map(fetchFeed)))
+def fetchElem(url : URL) : Task[Elem] = ZIO.attemptBlocking(XML.load(url))
 
-def bestAttemptFetchFeed(url : URL) : Task[Option[Elem]] =
-  fetchFeed(url)
+def bestAttemptFetchElem(url : URL) : Task[Option[Elem]] =
+  fetchElem(url)
     .logError
     .retry( quickRetrySchedule )
     .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
 
-def bestAttemptFetchFeeds(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
-  val maybeFeeds = ZIO.collectAllPar(Chunk.fromIterable(mf.sourceUrls.map(bestAttemptFetchFeed)))
-  val feedsFetched = maybeFeeds.map( _.collect { case Some(elem) => elem } )
-  feedsFetched.rejectZIO:
+def bestAttemptFetchElems(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
+  val maybeElems = ZIO.collectAllPar(Chunk.fromIterable(mf.sourceUrls.map(bestAttemptFetchElem)))
+  val elemsFetched = maybeElems.map( _.collect { case Some(elem) => elem } )
+  elemsFetched.rejectZIO:
     case chunk if chunk.isEmpty =>
-      ZIO.fail(RssFetchFailure(s"Could load no feeds for merged feed at '${mf.feedPath}'"))
+      ZIO.fail(XmlFetchFailure(s"Could load no feeds for merged feed at '${mf.feedPath}'"))
+
+def elemToRssElem( elem : Elem ) : Option[Elem] =
+  if elem.prefix == null then // we expect no prefix on top-level elements
+    elem.label match
+      case "rss" => Some(elem)
+      //case "atom" => COMING SOON
+      case _     => None
+  else
+    None
+
+def bestAttemptFetchFeeds(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
+  for
+    elems <- bestAttemptFetchElems(mf)
+  yield
+    elems.map( elemToRssElem ).collect{ case Some(elem) => elem }
 
 def bestAttemptFetchFeedsOrEmptyFeed(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
-  bestAttemptFetchFeeds(mf).logError.catchSome { case _ : RssFetchFailure => ZIO.succeed( List(errorEmptyFeed(mf)) ) }
+  bestAttemptFetchFeeds(mf).logError.catchSome { case _ : XmlFetchFailure => ZIO.succeed( List(errorEmptyFeed(mf)) ) }
 
 def mergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
   val spec = Element.Channel.Spec(mf.title(feeds), ac.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
