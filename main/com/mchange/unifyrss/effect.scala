@@ -52,16 +52,23 @@ def elemToRssElem( elem : Elem ) : Option[Elem] =
   if elem.prefix == null then // we expect no prefix on top-level elements
     elem.label match
       case "rss" => Some(elem)
-      //case "atom" => COMING SOON
+      case "feed" if elem \@ "xmlns" == "http://www.w3.org/2005/Atom" => Some(rssElemFromAtomFeedElem(elem))
       case _     => None
   else
     None
 
+def attemptElemToRssElem( elem : Elem ) : Task[Option[Elem]] =
+  ZIO.attempt( elemToRssElem(elem) ).logError.catchAll( _ => ZIO.succeed(None : Option[Elem]) )
+
+def bestAttemptElemsToRssElems( elems : immutable.Seq[Elem] ) : Task[immutable.Seq[Option[Elem]]] =
+  ZIO.mergeAll( elems.map( attemptElemToRssElem ) )( immutable.Seq.empty[Option[Elem]])( _ :+ _)
+
 def bestAttemptFetchFeeds(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
   for
     elems <- bestAttemptFetchElems(mf)
+    converted <- bestAttemptElemsToRssElems( elems )
   yield
-    elems.map( elemToRssElem ).collect{ case Some(elem) => elem }
+    converted.collect{ case Some(elem) => elem }
 
 def bestAttemptFetchFeedsOrEmptyFeed(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
   bestAttemptFetchFeeds(mf).logError.catchSome { case _ : XmlFetchFailure => ZIO.succeed( List(errorEmptyFeed(mf)) ) }
