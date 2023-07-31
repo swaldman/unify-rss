@@ -33,27 +33,7 @@ object RssMerger:
       throw new IncompatibleDuplicateBindings( badBindings )
     else
       noDupTups.toMap
-
-  def stripScopes( root : Node ) : Node =
-    // didn't work, namespaces reappeared, don't understand why exactly,
-    // i think maybe it's because we want to keep the prefixes in attributed
-    /*
-    val rule = new RewriteRule:
-      override def transform(n: Node) : Seq[Node] =
-        n match
-          case e : Elem => e.copy(scope = TopScope)
-          case other => other
-    val xform = new RuleTransformer(rule)
-    xform(root)
-    */
-    // this does work,
-    // from https://stackoverflow.com/questions/12535014/scala-completely-remove-namespace-from-xml
-    def clearScope(x: Node):Node = x match {
-      case e:Elem => e.copy(scope=TopScope, child = e.child.map(clearScope))
-      case o => o
-    }
-    clearScope(root)
-
+  
   def toText( node : Node ) : String =
     val pp = new PrettyPrinter(120,2)
     pp.format( node )
