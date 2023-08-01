@@ -1,12 +1,13 @@
 package com.mchange.unifyrss
 
+import scala.annotation.tailrec
 import scala.collection.*
 import zio.*
 
 import java.net.URL
 import audiofluidity.rss.Element
 
-import scala.xml.{Elem, XML}
+import scala.xml.{Elem, NamespaceBinding, TopScope, XML}
 import unstatic.UrlPath.*
 
 private val ExponentialBackoffFactor = 1.5d
@@ -48,17 +49,28 @@ def bestAttemptFetchElems(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
     case chunk if chunk.isEmpty =>
       ZIO.fail(XmlFetchFailure(s"Could load no feeds for merged feed at '${mf.feedPath}'"))
 
-def elemToRssElem( elem : Elem ) : Option[Elem] =
+@tailrec
+def scopeContains( prefix : String, uri : String, binding : NamespaceBinding ) : Boolean =
+  if binding == TopScope then
+    false
+  else if prefix == binding.prefix && uri == binding.uri then
+    true
+  else
+    scopeContains( prefix, uri, binding.parent )
+
+def elemToRssElem( elem : Elem ) : Elem =
   if elem.prefix == null then // we expect no prefix on top-level elements
     elem.label match
-      case "rss" => Some(elem)
-      case "feed" if elem \@ "xmlns" == "http://www.w3.org/2005/Atom" => Some(rssElemFromAtomFeedElem(elem))
-      case _     => None
+      case "rss" => elem
+      case "feed" if scopeContains( null, "http://www.w3.org/2005/Atom", elem.scope ) => rssElemFromAtomFeedElem(elem)
+      case _ => throw CantConvertToRss(s"Unknown feed type with label '${elem.label}' and scope '${elem.scope}'")
   else
-    None
+    throw new CantConvertToRss (
+      s"No prefixed elements are currently convertible to RSS, elem.prefix: ${elem.prefix}, elem.label: ${elem.label}, elem.scope: ${elem.scope}"
+    )
 
 def attemptElemToRssElem( elem : Elem ) : Task[Option[Elem]] =
-  ZIO.attempt( elemToRssElem(elem) ).logError.catchAll( _ => ZIO.succeed(None : Option[Elem]) )
+  ZIO.attempt( Some(elemToRssElem(elem)) ).logError.catchAll( _ => ZIO.succeed(None : Option[Elem]) )
 
 def bestAttemptElemsToRssElems( elems : immutable.Seq[Elem] ) : Task[immutable.Seq[Option[Elem]]] =
   ZIO.mergeAll( elems.map( attemptElemToRssElem ) )( immutable.Seq.empty[Option[Elem]])( _ :+ _)

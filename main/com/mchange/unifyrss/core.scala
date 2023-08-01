@@ -14,6 +14,8 @@ class IncompatibleDuplicateBindings(bindings : immutable.Set[(String,String)]) e
 class BadItemXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class BadAtomXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class XmlFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
+class CantConvertToRss(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
+
 
 type FeedRefMap      = immutable.Map[Rel,Ref[immutable.Seq[Byte]]]
 type FeedEndpointMap = immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]]
