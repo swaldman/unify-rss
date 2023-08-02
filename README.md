@@ -53,8 +53,6 @@ but I am not using them.)
 are generated from multiple sites, we make up a "stub site" link back to this service.
 I have not yet implemented the serving of those "stub sites" yet though.
 
-* Atom feeds are not yet supported.
-
 ---
 
 Let me know what you think!
