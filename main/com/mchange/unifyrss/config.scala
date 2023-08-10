@@ -32,12 +32,14 @@ object MergedFeed:
     def apply( url : String, transformer : Elem => Elem) : SourceUrl = SourceUrl( new URL(url), transformer )
   final case class SourceUrl( url : URL, transformer : Elem => Elem )
   object Default:
-    @targetName("from_URLs")
-    def apply( sourceUrls : immutable.Seq[URL], baseName : String, itemLink : Int, refreshSeconds : Int ) : MergedFeed.Default =
-      new Default( sourceUrls.map( SourceUrl.apply ), baseName, itemLink, refreshSeconds )
-    @targetName("from_Strings")
-    def apply( sourceUrls : immutable.Seq[String], baseName : String, itemLink : Int = Int.MaxValue, refreshSeconds : Int = 600 ) : MergedFeed.Default =
-      new Default( sourceUrls.map( SourceUrl.apply ), baseName, itemLink, refreshSeconds )
+    @targetName("apply_from_URLs")
+    def apply( urls : immutable.Seq[URL], baseName : String, itemLink : Int, refreshSeconds : Int ) : MergedFeed.Default =
+      new Default( urls.map( SourceUrl.apply ), baseName, itemLink, refreshSeconds )
+    @targetName("apply_from_Strings")
+    def apply( urls : immutable.Seq[String], baseName : String, itemLink : Int = Int.MaxValue, refreshSeconds : Int = 600 ) : MergedFeed.Default =
+      new Default( urls.map( SourceUrl.apply ), baseName, itemLink, refreshSeconds )
+    def apply( sourceUrls : immutable.Seq[SourceUrl], baseName : String, itemLink : Int, refreshSeconds : Int ) : MergedFeed.Default =
+      new Default( sourceUrls, baseName, itemLink, refreshSeconds )
   class Default(
     override val sourceUrls : immutable.Seq[SourceUrl],
     val baseName : String,
