@@ -36,11 +36,13 @@ private def errorEmptyFeed(mf : MergedFeed) : Elem =
 
 def fetchElem(url : URL) : Task[Elem] = ZIO.attemptBlocking(XML.load(url))
 
-def bestAttemptFetchElem(url : URL) : Task[Option[Elem]] =
-  fetchElem(url)
+def fetchElem( sourceUrl : MergedFeed.SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url ).map( sourceUrl.transformer )
+
+def bestAttemptFetchElem(sourceUrl : MergedFeed.SourceUrl) : Task[Option[Elem]] =
+  fetchElem(sourceUrl)
     .logError
     .retry( quickRetrySchedule )
-    .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
+    .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${sourceUrl.url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
 
 def bestAttemptFetchElems(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
   val maybeElems = ZIO.collectAllPar(Chunk.fromIterable(mf.sourceUrls.map(bestAttemptFetchElem)))

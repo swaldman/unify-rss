@@ -1,5 +1,6 @@
 package com.mchange.unifyrss
 
+import scala.annotation.targetName
 import scala.collection.*
 import scala.xml.Elem
 import java.net.URL
@@ -14,19 +15,31 @@ case class AppConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerR
     proxiedPort.getOrElse( fromUrlOrDefault )
 
 trait MergedFeed:
-  def sourceUrls                                    : immutable.Seq[URL]
-  def itemLimit                                     : Int
-  def title( rootElems : immutable.Seq[Elem])       : String
-  def description( rootElems : immutable.Seq[Elem]) : String
-  def feedPath                                      : Rel
-  def stubSitePath                                  : Rel
-  def stubSite( rootElems : immutable.Seq[Elem])    : String
-  def stubSiteContentType                           : String
-  def refreshSeconds                                : Int
+  def sourceUrls                                     : immutable.Seq[MergedFeed.SourceUrl]
+  def itemLimit                                      : Int
+  def title( rootElems : immutable.Seq[Elem] )       : String
+  def description( rootElems : immutable.Seq[Elem] ) : String
+  def feedPath                                       : Rel
+  def stubSitePath                                   : Rel
+  def stubSite( rootElems : immutable.Seq[Elem] )    : String
+  def stubSiteContentType                            : String
+  def refreshSeconds                                 : Int
 
 object MergedFeed:
+  object SourceUrl:
+    def apply( url : URL )                               : SourceUrl = SourceUrl(url, identity)
+    def apply( url : String)                             : SourceUrl = SourceUrl(new URL(url))
+    def apply( url : String, transformer : Elem => Elem) : SourceUrl = SourceUrl( new URL(url), transformer )
+  final case class SourceUrl( url : URL, transformer : Elem => Elem )
+  object Default:
+    @targetName("from_URLs")
+    def apply( sourceUrls : immutable.Seq[URL], baseName : String, itemLink : Int, refreshSeconds : Int ) : MergedFeed.Default =
+      new Default( sourceUrls.map( SourceUrl.apply ), baseName, itemLink, refreshSeconds )
+    @targetName("from_Strings")
+    def apply( sourceUrls : immutable.Seq[String], baseName : String, itemLink : Int = Int.MaxValue, refreshSeconds : Int = 600 ) : MergedFeed.Default =
+      new Default( sourceUrls.map( SourceUrl.apply ), baseName, itemLink, refreshSeconds )
   class Default(
-    override val sourceUrls : immutable.Seq[URL],
+    override val sourceUrls : immutable.Seq[SourceUrl],
     val baseName : String,
     override val itemLimit : Int = Int.MaxValue,
     override val refreshSeconds : Int = 600
