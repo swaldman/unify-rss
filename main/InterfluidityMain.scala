@@ -1,6 +1,5 @@
 import com.mchange.unifyrss.*
 
-import java.net.URL
 import scala.collection.*
 import unstatic.UrlPath.*
 import scala.xml.Elem
@@ -8,20 +7,19 @@ import scala.xml.Elem
 object InterfluidityMain extends AbstractMain {
 
   val allBlogs = immutable.Seq(
-    new URL("https://drafts.interfluidity.com/feed/index.rss"),
-    new URL("https://tech.interfluidity.com/feed/index.rss"),
-    new URL("https://www.interfluidity.com/feed"),
-    new URL("https://www.sbt-ethereum.io/blog/atom.xml"),
-
+    SourceUrl("https://drafts.interfluidity.com/feed/index.rss"),
+    SourceUrl("https://tech.interfluidity.com/feed/index.rss"),
+    SourceUrl("https://www.interfluidity.com/feed"),
+    SourceUrl("https://www.sbt-ethereum.io/blog/atom.xml"),
   )
 
   val allBlogsAndMicroblogs = allBlogs ++ immutable.Seq(
-    new URL("https://econtwitter.net/@interfluidity.rss"),
-    new URL("https://fosstodon.org/@interfluidity.rss")
+    SourceUrl("https://econtwitter.net/@interfluidity.rss"),
+    SourceUrl("https://fosstodon.org/@interfluidity.rss"),
   )
 
   val everything = allBlogs ++ allBlogsAndMicroblogs ++ immutable.Seq(
-    new URL("https://github.com/swaldman.atom")
+    SourceUrl("https://github.com/swaldman.atom"),
   )
 
   val AllBlogsFeed = new MergedFeed.Default(sourceUrls = allBlogs, baseName = "all-blogs", itemLimit = 25):
