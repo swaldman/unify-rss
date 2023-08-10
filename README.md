@@ -53,6 +53,10 @@ but I am not using them.)
 are generated from multiple sites, we make up a "stub site" link back to this service.
 I have not yet implemented the serving of those "stub sites" yet though.
 
+### elsewhere
+
+See [_Building a resilient RSS feed unifier with ZIO_](https://tech.interfluidity.com/2023/07/29/building-a-resilient-rss-feed-unifier-with-zio/index.html).
+
 ---
 
 Let me know what you think!
