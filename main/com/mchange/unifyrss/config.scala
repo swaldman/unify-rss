@@ -2,7 +2,7 @@ package com.mchange.unifyrss
 
 import scala.annotation.targetName
 import scala.collection.*
-import scala.xml.Elem
+import scala.xml.{Elem,XML}
 import java.net.URL
 import unstatic.UrlPath.*
 
@@ -20,8 +20,16 @@ object SourceUrl:
   def apply( url : String, transformer : Elem => Elem) : SourceUrl = SourceUrl( new URL(url), transformer )
 final case class SourceUrl( url : URL, transformer : Elem => Elem )
 
+object MetaSource:
+  case class OPML( opmlUrl : URL ) extends MetaSource:
+    def sourceUrls : immutable.Seq[SourceUrl] = (XML.load(opmlUrl) \\ "outline").map( _ \@ "xmlUrl" ).filter( _.nonEmpty).map( SourceUrl.apply )
+trait MetaSource:
+  def sourceUrls : immutable.Seq[SourceUrl]
+end MetaSource
+
 trait MergedFeed:
   def sourceUrls                                     : immutable.Seq[SourceUrl]
+  def metaSources                                    : immutable.Seq[MetaSource]
   def itemLimit                                      : Int
   def title( rootElems : immutable.Seq[Elem] )       : String
   def description( rootElems : immutable.Seq[Elem] ) : String
@@ -33,11 +41,13 @@ trait MergedFeed:
 
 object MergedFeed:
   class Default(
-    override val sourceUrls : immutable.Seq[SourceUrl],
     val baseName : String,
-    override val itemLimit : Int = Int.MaxValue,
-    override val refreshSeconds : Int = 600
+    override val sourceUrls     : immutable.Seq[SourceUrl]  = Nil,
+    override val metaSources    : immutable.Seq[MetaSource] = Nil,
+    override val itemLimit      : Int                       = Int.MaxValue,
+    override val refreshSeconds : Int                       = 600
   ) extends MergedFeed:
+    require( sourceUrls.nonEmpty || metaSources.nonEmpty, s"Bad MergedFeed '${baseName}' configured, no sources or metasources specified." )
     override def feedPath = Rel(s"${baseName}.rss")
     override def stubSiteContentType = "text/html"
     override def stubSitePath =
