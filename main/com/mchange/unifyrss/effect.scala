@@ -25,16 +25,17 @@ val quickRetrySchedule =
   Schedule.spaced(QuickRetryPeriod).upTo(QuickRetryLimit)
 
 private def errorEmptyFeed(mf : MergedFeed) : Elem =
-  val badFeeds = mf.sourceUrls.map( u => s"'${u.toString}'").mkString(", ")
+  val badFeeds = if mf.sourceUrls.isEmpty then "none" else mf.sourceUrls.map( u => s"'${u.toString}'").mkString(", ")
+  val badMetaSources = if mf.metaSources.isEmpty then "none" else mf.metaSources.map( ms => s"'${ms.toString}'").mkString(", ")
   val channel = Element.Channel.create(
     title = s"ERROR — Failed to merge feeds at ${badFeeds}",
     linkUrl = "about:blank",
-    description = s"Attempt to merge feeds (${badFeeds}) failed to load even a single feed. This empty feed is a placeholder",
+    description = s"Attempt to merge feeds (${badFeeds}) and/or metasources (${badMetaSources}) failed to load even a single feed. This empty feed is a placeholder",
     items = List.empty
   )
   Element.Rss(channel).toElem
 
-def fetchElem(url : URL) : Task[Elem] = ZIO.attemptBlocking(XML.load(url))
+def fetchElem( url : URL ) : Task[Elem] = ZIO.attemptBlocking(XML.load(url))
 
 def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url ).map( sourceUrl.transformer )
 
@@ -44,11 +45,23 @@ def bestAttemptFetchElem(sourceUrl : SourceUrl) : Task[Option[Elem]] =
     .retry( quickRetrySchedule )
     .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${sourceUrl.url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
 
+def bestAttemptFetchSourceUrls( ms : MetaSource ) : Task[immutable.Seq[SourceUrl]] =
+  ZIO.attempt( ms.sourceUrls )
+     .logError
+     .retry( quickRetrySchedule )
+     .foldCauseZIO(cause => ZIO.logCause(s"Problem loading MetaSource '${ms}'", cause) *> ZIO.succeed(immutable.Seq.empty), sourceUrls => ZIO.succeed(sourceUrls))
+
 def bestAttemptFetchElems(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
-  val maybeElems = ZIO.collectAllPar(Chunk.fromIterable(mf.sourceUrls.map(bestAttemptFetchElem)))
-  val elemsFetched = maybeElems.map( _.collect { case Some(elem) => elem } )
-  elemsFetched.rejectZIO:
-    case chunk if chunk.isEmpty =>
+  val raw = 
+    for
+      fromMetaSources <- ZIO.collectAllPar(mf.metaSources.map( bestAttemptFetchSourceUrls )).map( _.flatten )
+      allSourceUrls   =  mf.sourceUrls ++ fromMetaSources
+      maybeElems      <- ZIO.collectAllPar(allSourceUrls.map( bestAttemptFetchElem) )
+    yield
+      maybeElems
+        .collect { case Some(elem) => elem }
+  raw.rejectZIO:
+    case fetched if fetched.isEmpty =>
       ZIO.fail(XmlFetchFailure(s"Could load no feeds for merged feed at '${mf.feedPath}'"))
 
 @tailrec
