@@ -40,7 +40,7 @@ object InterfluidityMain extends AbstractMain {
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, everything"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks posts to all blogs and microblogs, as well as other activity, by Steve Randy Waldman (interfludity), as well as posts to microblogs that syndicate by RSS."
 
-  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100):
+  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800):
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasta"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
