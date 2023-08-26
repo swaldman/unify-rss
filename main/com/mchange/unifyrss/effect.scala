@@ -24,16 +24,16 @@ def retrySchedule( normalRefresh : Duration, firstErrorRetry : Duration = FirstE
 val quickRetrySchedule =
   Schedule.spaced(QuickRetryPeriod).upTo(QuickRetryLimit)
 
-private def errorEmptyFeed(mf : MergedFeed) : Elem =
+private def errorEmptyRssElement(mf : MergedFeed, location : String, description : String) : Element.Rss =
   val badFeeds = if mf.sourceUrls.isEmpty then "none" else mf.sourceUrls.map( u => s"'${u.toString}'").mkString(", ")
   val badMetaSources = if mf.metaSources.isEmpty then "none" else mf.metaSources.map( ms => s"'${ms.toString}'").mkString(", ")
   val channel = Element.Channel.create(
-    title = s"ERROR — Failed to merge feeds at ${badFeeds}",
+    title = s"ERROR — Failed to merge feeds, problem at location '${location}'. Feeds: [${badFeeds}], MetaSource: [${badMetaSources}]",
     linkUrl = "about:blank",
-    description = s"Attempt to merge feeds (${badFeeds}) and/or metasources (${badMetaSources}) failed to load even a single feed. This empty feed is a placeholder",
+    description = description,
     items = List.empty
   )
-  Element.Rss(channel).toElem
+  Element.Rss(channel)
 
 def fetchElem( url : URL ) : Task[Elem] = ZIO.attemptBlocking(XML.load(url))
 
@@ -97,12 +97,17 @@ def bestAttemptFetchFeeds(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
   yield
     converted.collect{ case Some(elem) => elem }
 
-def bestAttemptFetchFeedsOrEmptyFeed(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
-  bestAttemptFetchFeeds(mf).logError.catchSome { case _ : XmlFetchFailure => ZIO.succeed( List(errorEmptyFeed(mf)) ) }
+def bestAttemptFetchFeedsOrEmptyFeed(mf : MergedFeed) : UIO[immutable.Seq[Elem]] =
+  bestAttemptFetchFeeds(mf).logError.catchAll( t => ZIO.succeed(List(errorEmptyRssElement(mf, "bestAttemptFetchFeedsOrEmptyFeed", t.toString).toElem) ) )
 
 def mergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
   val spec = Element.Channel.Spec(mf.title(feeds), ac.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
   RssMerger.merge(spec, mf.itemLimit, feeds*).bytes
+
+def bestAttemptMergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : UIO[immutable.Seq[Byte]] =
+  mergeFeeds(ac, mf, feeds)
+    .logError
+    .catchAll( t => ZIO.succeed(errorEmptyRssElement(mf, "bestAttemptFetchFeedsOrEmptyFeed", t.toString).bytes) )
 
 def stubSite(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[String] = ZIO.attempt(mf.stubSite(feeds))
 
@@ -110,7 +115,7 @@ def initMergedFeedRefs( ac : AppConfig ) : Task[FeedRefMap] =
   def refTup( mf : MergedFeed ) =
     for
       elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
-      feed  <- mergeFeeds( ac, mf, elems )
+      feed  <- bestAttemptMergeFeeds( ac, mf, elems )
       ref   <- Ref.make(feed).logError  // let's be sure to see if anything goes wrong
     yield (mf.feedPath, ref)
   val tupEffects = ac.mergedFeeds.map( refTup )
@@ -119,7 +124,7 @@ def initMergedFeedRefs( ac : AppConfig ) : Task[FeedRefMap] =
 def updateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : FeedRefMap ) : Task[Unit] =
   for
     elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
-    feed  <- mergeFeeds(ac, mf, elems)
+    feed  <- bestAttemptMergeFeeds(ac, mf, elems)
     _     <- mergedFeedRefs(mf.feedPath).set(feed)
   yield ()
 
