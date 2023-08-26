@@ -10,7 +10,7 @@ This application let's you configure any number of "synthetic" RSS feeds, each o
 by merging any number of source feeds.
 
 You can specify source feeds directly and/or subscribe to
-an [OPML feed](https://indieweb.org/OPML), which the application will follow as the source list changes
+[OPML feeds](https://indieweb.org/OPML), which the application will follow as the source list changes
 dynamically over time.
 
 ### buildless
