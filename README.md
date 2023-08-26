@@ -4,7 +4,14 @@ I'm dividing my writing output among a number of blogs
 and microblogging sites these days. I wanted to offer
 RSS feeds that would let you subscribe to all of these at
 once, in the unlikely and rather discreditable circumstance
-that you like to read what I write.
+that you like to read what I write. So...
+
+This application let's you configure any number of "synthetic" RSS feeds, each one built
+by merging any number of source feeds.
+
+You can specify source feeds directly and/or subscribe to
+an [OPML feed](https://indieweb.org/OPML), which the application will follow as the source list changes
+dynamically over time.
 
 ### buildless
 
