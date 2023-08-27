@@ -14,12 +14,30 @@ case class AppConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerR
       if fromUrl >= 0 then fromUrl else 80
     proxiedPort.getOrElse( fromUrlOrDefault )
 
+/**
+  * Beware! SourceUrl transformers might see atom feeds rather than RSS, or who knows what!
+  * Try to make them resilient to these.
+  *
+  * There is no need to supply a transformer just to convert atom to RSS. We handle that
+  * automatically later in the pipeline. But if you want to do more than that, then you might
+  * first normalize feeds to RSS (from atom) before doing whatever else it is you are doing.
+  */
 object SourceUrl:
   def apply( url : URL )                               : SourceUrl = SourceUrl(url, identity)
   def apply( url : String)                             : SourceUrl = SourceUrl(new URL(url))
   def apply( url : String, transformer : Elem => Elem) : SourceUrl = SourceUrl( new URL(url), transformer )
 final case class SourceUrl( url : URL, transformer : Elem => Elem )
 
+/**
+  * Beware! MetaSource eachFeedTransformers might see atom feeds rather than RSS, or who knows what!
+  * Try to make them resilient to these.
+  *
+  * There is no need to supply a transformer just to convert atom to RSS. We handle that
+  * automatically later in the pipeline. But if you want to do more than that, then you might
+  * first normalize feeds to RSS (from atom) before doing whatever else it is you are doing.
+  *
+  * MetaSource outputTransformers will reliably see RSS.
+  */
 object MetaSource:
   case class OPML( opmlUrl : URL, opmlTransformer : Elem => Elem = identity, eachFeedTransformer : Elem => Elem = identity ) extends MetaSource:
     def sourceUrls : immutable.Seq[SourceUrl] =
