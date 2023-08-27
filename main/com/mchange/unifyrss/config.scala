@@ -22,7 +22,11 @@ final case class SourceUrl( url : URL, transformer : Elem => Elem )
 
 object MetaSource:
   case class OPML( opmlUrl : URL, opmlTransformer : Elem => Elem = identity, eachFeedTransformer : Elem => Elem = identity ) extends MetaSource:
-    def sourceUrls : immutable.Seq[SourceUrl] = ( opmlTransformer( XML.load(opmlUrl) ) \\ "outline").map( _ \@ "xmlUrl" ).filter( _.nonEmpty).map( feedUrl => SourceUrl( feedUrl, eachFeedTransformer ) )
+    def sourceUrls : immutable.Seq[SourceUrl] =
+      ( opmlTransformer( XML.load(opmlUrl) ) \\ "outline")
+        .map( _ \@ "xmlUrl" )
+        .filter( _.nonEmpty)
+        .map( feedUrl => SourceUrl( feedUrl, eachFeedTransformer ) )
 trait MetaSource:
   def sourceUrls : immutable.Seq[SourceUrl]
 end MetaSource
