@@ -3,7 +3,8 @@ import com.mchange.unifyrss.*
 import java.net.URL
 import scala.collection.*
 import unstatic.UrlPath.*
-import scala.xml.Elem
+import scala.xml.*
+import scala.xml.transform.*
 
 object InterfluidityMain extends AbstractMain {
 
@@ -23,9 +24,38 @@ object InterfluidityMain extends AbstractMain {
     SourceUrl("https://github.com/swaldman.atom"),
   )
 
+  def prefixTitleOfItemElem( prefix : String, itemElem : Elem ) : Elem =
+    val oldTitleElems = (itemElem \ "title")
+    if oldTitleElems.nonEmpty then
+      val oldTitleElem = oldTitleElems.head.asInstanceOf[Elem] // we're ignoring and leaving be all but the first title elem, if (badly) there are multiple
+      val newChildren = itemElem.child.map: node =>
+        if node != oldTitleElem then node
+        else oldTitleElem.copy( child = Seq(Text(prefix+oldTitleElem.text)) )
+      itemElem.copy( child = newChildren )
+    else
+      itemElem.copy( child = itemElem.child :+ Elem("","title",Null,TopScope,true, Text(prefix + "Untitled Item")) )
+
+  def prependFeedTitleToItemTitles( rssElem : Elem ) : Elem =
+    val feedPrefix =
+      val queryResult = (rssElem \ "channel").map( _ \ "title")
+      if queryResult.nonEmpty then (queryResult.head.text.trim + ": ") else ""
+    val rule = new RewriteRule:
+      override def transform(n: Node): Seq[Node] = n match
+        case elem: Elem if elem.label == "item" => prefixTitleOfItemElem(feedPrefix, elem)
+        case other => other
+    val transform = new RuleTransformer(rule)
+    transform(rssElem).asInstanceOf[Elem]    
+
+  def bestAttemptPrependFeedTitleToItemTitle( anyTopElem : Elem ) : Elem =
+    val rssElem : Option[Elem] = anyTopElem.label match 
+      case "rss" => Some(anyTopElem)
+      case "feed" if scopeContains( null, "http://www.w3.org/2005/Atom", anyTopElem.scope ) => Some( rssElemFromAtomFeedElem(anyTopElem) )
+      case _ => None
+    rssElem.fold( anyTopElem )( prependFeedTitleToItemTitles )    
+
   val subscribedPodcatsMetaSources = immutable.Seq(
-    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts")),
-    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF")),
+    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
+    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
   )
 
   val AllBlogsFeed = new MergedFeed.Default(baseName = "all-blogs", sourceUrls = allBlogs, itemLimit = 25):
