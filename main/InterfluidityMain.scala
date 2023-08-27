@@ -24,13 +24,14 @@ object InterfluidityMain extends AbstractMain {
     SourceUrl("https://github.com/swaldman.atom"),
   )
 
-  def prefixTitleOfItemElem( prefix : String, itemElem : Elem ) : Elem =
+  def prefixTitlesOfItemElem( prefix : String, itemElem : Elem ) : Elem =
     val oldTitleElems = (itemElem \ "title")
     if oldTitleElems.nonEmpty then
-      val oldTitleElem = oldTitleElems.head.asInstanceOf[Elem] // we're ignoring and leaving be all but the first title elem, if (badly) there are multiple
       val newChildren = itemElem.child.map: node =>
-        if node != oldTitleElem then node
-        else oldTitleElem.copy( child = Seq(Text(prefix+oldTitleElem.text)) )
+        if !oldTitleElems.contains(node) then node
+        else
+          val oldTitleElem = node.asInstanceOf[Elem]
+          oldTitleElem.copy( child = Seq(Text(prefix+oldTitleElem.text)) )
       itemElem.copy( child = newChildren )
     else
       itemElem.copy( child = itemElem.child :+ Elem("","title",Null,TopScope,true, Text(prefix + "Untitled Item")) )
@@ -41,7 +42,7 @@ object InterfluidityMain extends AbstractMain {
       if queryResult.nonEmpty then (queryResult.head.text.trim + ": ") else ""
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
-        case elem: Elem if elem.label == "item" => prefixTitleOfItemElem(feedPrefix, elem)
+        case elem: Elem if elem.label == "item" => prefixTitlesOfItemElem(feedPrefix, elem)
         case other => other
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]    
