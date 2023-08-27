@@ -21,8 +21,8 @@ object SourceUrl:
 final case class SourceUrl( url : URL, transformer : Elem => Elem )
 
 object MetaSource:
-  case class OPML( opmlUrl : URL ) extends MetaSource:
-    def sourceUrls : immutable.Seq[SourceUrl] = (XML.load(opmlUrl) \\ "outline").map( _ \@ "xmlUrl" ).filter( _.nonEmpty).map( SourceUrl.apply )
+  case class OPML( opmlUrl : URL, opmlTransformer : Elem => Elem = identity, eachFeedTransformer : Elem => Elem = identity ) extends MetaSource:
+    def sourceUrls : immutable.Seq[SourceUrl] = ( opmlTransformer( XML.load(opmlUrl) ) \\ "outline").map( _ \@ "xmlUrl" ).filter( _.nonEmpty).map( feedUrl => SourceUrl( feedUrl, eachFeedTransformer ) )
 trait MetaSource:
   def sourceUrls : immutable.Seq[SourceUrl]
 end MetaSource
@@ -38,14 +38,16 @@ trait MergedFeed:
   def stubSite( rootElems : immutable.Seq[Elem] )    : String
   def stubSiteContentType                            : String
   def refreshSeconds                                 : Int
+  def outputTransformer                              : Elem => Elem
 
 object MergedFeed:
   class Default(
     val baseName : String,
-    override val sourceUrls     : immutable.Seq[SourceUrl]  = Nil,
-    override val metaSources    : immutable.Seq[MetaSource] = Nil,
-    override val itemLimit      : Int                       = Int.MaxValue,
-    override val refreshSeconds : Int                       = 600
+    override val sourceUrls        : immutable.Seq[SourceUrl]  = Nil,
+    override val metaSources       : immutable.Seq[MetaSource] = Nil,
+    override val itemLimit         : Int                       = Int.MaxValue,
+    override val refreshSeconds    : Int                       = 600,
+    override val outputTransformer : Elem => Elem              = identity,
   ) extends MergedFeed:
     require( sourceUrls.nonEmpty || metaSources.nonEmpty, s"Bad MergedFeed '${baseName}' configured, no sources or metasources specified." )
     override def feedPath = Rel(s"${baseName}.rss")
