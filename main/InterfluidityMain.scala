@@ -45,7 +45,7 @@ object InterfluidityMain extends AbstractMain {
         case elem: Elem if elem.label == "item" => prefixTitlesOfItemElem(feedPrefix, elem)
         case other => other
     val transform = new RuleTransformer(rule)
-    transform(rssElem).asInstanceOf[Elem]    
+    transform(rssElem).asInstanceOf[Elem]
 
   def bestAttemptPrependFeedTitleToItemTitle( anyTopElem : Elem ) : Elem =
     val rssElem : Option[Elem] = anyTopElem.label match 
@@ -53,6 +53,19 @@ object InterfluidityMain extends AbstractMain {
       case "feed" if scopeContains( null, "http://www.w3.org/2005/Atom", anyTopElem.scope ) => Some( rssElemFromAtomFeedElem(anyTopElem) )
       case _ => None
     rssElem.fold( anyTopElem )( prependFeedTitleToItemTitles )    
+
+  def onlyMostRecentNPRNewsInOutput( outputElem : Elem ) : Elem =
+    val allNprNewsItems = (outputElem \\ "item").filter( item => (item \ "title").foldLeft("")( (accum, next) => accum + next.text ).indexOf("NPR News:") >= 0 )
+    if allNprNewsItems.nonEmpty then
+      val topNprNewsItem = allNprNewsItems.head
+      val deleteAllNprNewsButTopRule = new RewriteRule:
+        override def transform(n: Node): Seq[Node] = n match
+          case elem: Elem if allNprNewsItems.contains(elem) && elem != topNprNewsItem => NodeSeq.Empty
+          case other => other
+      val transform = new RuleTransformer(deleteAllNprNewsButTopRule)
+      transform( outputElem ).asInstanceOf[Elem]
+    else
+      outputElem
 
   val subscribedPodcatsMetaSources = immutable.Seq(
     MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
@@ -71,7 +84,7 @@ object InterfluidityMain extends AbstractMain {
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, everything"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks posts to all blogs and microblogs, as well as other activity, by Steve Randy Waldman (interfludity), as well as posts to microblogs that syndicate by RSS."
 
-  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800):
+  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800, outputTransformer = onlyMostRecentNPRNewsInOutput):
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasts"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
