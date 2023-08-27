@@ -79,8 +79,6 @@ object RssMerger:
     val pp = new PrettyPrinter(120,2)
     pp.format( node )
 
-//Fri, 25 Aug 2023 12:10:00 EDT
-
   //NOT given or implicit please!
   val ItemOrdering =
     def parsePubDate( str : String ) : Instant =
