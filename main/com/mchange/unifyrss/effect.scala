@@ -7,7 +7,7 @@ import zio.*
 import java.net.URL
 import audiofluidity.rss.Element
 
-import scala.xml.{Elem, NamespaceBinding, TopScope, XML}
+import scala.xml.{Elem, NamespaceBinding, PrettyPrinter, TopScope, XML}
 import unstatic.UrlPath.*
 
 private val ExponentialBackoffFactor = 1.5d
@@ -100,9 +100,16 @@ def bestAttemptFetchFeeds(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
 def bestAttemptFetchFeedsOrEmptyFeed(mf : MergedFeed) : UIO[immutable.Seq[Elem]] =
   bestAttemptFetchFeeds(mf).logError.catchAll( t => ZIO.succeed(List(errorEmptyRssElement(mf, "bestAttemptFetchFeedsOrEmptyFeed", t.toString).toElem) ) )
 
+def elemToBytes( elem : Elem ) : immutable.Seq[Byte] =
+  val pp = new PrettyPrinter(width=120, step=2, minimizeEmpty=true)
+  val text = s"<?xml version='1.0' encoding='UTF-8'?>\n${pp.format(elem)}"
+  immutable.ArraySeq.ofByte(text.getBytes(scala.io.Codec.UTF8.charSet))
+
 def mergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
   val spec = Element.Channel.Spec(mf.title(feeds), ac.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
-  RssMerger.merge(spec, mf.itemLimit, feeds*).bytes
+  val rssElement = RssMerger.merge(spec, mf.itemLimit, feeds*)
+  val xformed = mf.outputTransformer( rssElement.toElem )
+  elemToBytes( xformed )
 
 def bestAttemptMergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : UIO[immutable.Seq[Byte]] =
   mergeFeeds(ac, mf, feeds)

@@ -38,14 +38,16 @@ trait MergedFeed:
   def stubSite( rootElems : immutable.Seq[Elem] )    : String
   def stubSiteContentType                            : String
   def refreshSeconds                                 : Int
+  def outputTransformer                              : Elem => Elem
 
 object MergedFeed:
   class Default(
     val baseName : String,
-    override val sourceUrls     : immutable.Seq[SourceUrl]  = Nil,
-    override val metaSources    : immutable.Seq[MetaSource] = Nil,
-    override val itemLimit      : Int                       = Int.MaxValue,
-    override val refreshSeconds : Int                       = 600
+    override val sourceUrls        : immutable.Seq[SourceUrl]  = Nil,
+    override val metaSources       : immutable.Seq[MetaSource] = Nil,
+    override val itemLimit         : Int                       = Int.MaxValue,
+    override val refreshSeconds    : Int                       = 600,
+    override val outputTransformer : Elem => Elem              = identity,
   ) extends MergedFeed:
     require( sourceUrls.nonEmpty || metaSources.nonEmpty, s"Bad MergedFeed '${baseName}' configured, no sources or metasources specified." )
     override def feedPath = Rel(s"${baseName}.rss")
