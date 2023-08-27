@@ -54,6 +54,9 @@ object InterfluidityMain extends AbstractMain {
       case _ => None
     rssElem.fold( anyTopElem )( prependFeedTitleToItemTitles )    
 
+  // there is no need or point to this. NPR helpfully keeps only one news headline item in their feed.
+  // i see a zillion copies in Inoreader only because inoreader retains everything it has seen
+  /*
   def onlyMostRecentNPRNewsInOutput( outputElem : Elem ) : Elem =
     val allNprNewsItems = (outputElem \\ "item").filter( item => (item \ "title").foldLeft("")( (accum, next) => accum + next.text ).indexOf("NPR News:") >= 0 )
     if allNprNewsItems.nonEmpty then
@@ -66,7 +69,8 @@ object InterfluidityMain extends AbstractMain {
       transform( outputElem ).asInstanceOf[Elem]
     else
       outputElem
-
+  */
+   
   val subscribedPodcatsMetaSources = immutable.Seq(
     MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
     MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
@@ -84,7 +88,7 @@ object InterfluidityMain extends AbstractMain {
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, everything"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks posts to all blogs and microblogs, as well as other activity, by Steve Randy Waldman (interfludity), as well as posts to microblogs that syndicate by RSS."
 
-  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800, outputTransformer = onlyMostRecentNPRNewsInOutput):
+  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800 /*, outputTransformer = onlyMostRecentNPRNewsInOutput */):
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasts"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
