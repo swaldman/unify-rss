@@ -1,6 +1,5 @@
 package com.mchange.unifyrss
 
-import scala.annotation.tailrec
 import scala.collection.*
 import zio.*
 
@@ -63,15 +62,6 @@ def bestAttemptFetchElems(mf : MergedFeed) : Task[immutable.Seq[Elem]] =
   raw.rejectZIO:
     case fetched if fetched.isEmpty =>
       ZIO.fail(XmlFetchFailure(s"Could load no feeds for merged feed at '${mf.feedPath}'"))
-
-@tailrec
-def scopeContains( prefix : String, uri : String, binding : NamespaceBinding ) : Boolean =
-  if binding == TopScope then
-    false
-  else if prefix == binding.prefix && uri == binding.uri then
-    true
-  else
-    scopeContains( prefix, uri, binding.parent )
 
 def elemToRssElem( elem : Elem ) : Elem =
   if elem.prefix == null then // we expect no prefix on top-level elements
@@ -143,4 +133,3 @@ def periodicallyResilientlyUpdateMergedFeedRef( ac : AppConfig, mf : MergedFeed,
 def periodicallyResilientlyUpdateAllMergedFeedRefs( ac : AppConfig, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) =
   val allForks = ac.mergedFeeds.map( mf => periodicallyResilientlyUpdateMergedFeedRef( ac, mf, mergedFeedRefs ).forkDaemon )
   ZIO.collectAllDiscard( allForks )
-

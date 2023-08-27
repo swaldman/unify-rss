@@ -1,5 +1,6 @@
 package com.mchange.unifyrss
 
+import scala.annotation.tailrec
 import scala.xml.*
 import scala.collection.*
 import unstatic.UrlPath.*
@@ -15,7 +16,6 @@ class BadItemXml(message : String, cause : Throwable = null)                   e
 class BadAtomXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class XmlFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
 class CantConvertToRss(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
-
 
 type FeedRefMap      = immutable.Map[Rel,Ref[immutable.Seq[Byte]]]
 type FeedEndpointMap = immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]]
@@ -44,3 +44,13 @@ def stripScopes(root: Node): Node =
     case o => o
   }
   clearScope(root)
+
+@tailrec
+def scopeContains( prefix : String, uri : String, binding : NamespaceBinding ) : Boolean =
+  if binding == TopScope then
+    false
+  else if prefix == binding.prefix && uri == binding.uri then
+    true
+  else
+    scopeContains( prefix, uri, binding.parent )
+
