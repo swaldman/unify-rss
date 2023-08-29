@@ -65,7 +65,7 @@ object InterfluidityMain extends AbstractMain {
     mbFeedImage.fold(rssElem): feedImage =>
       val rule = new RewriteRule:
         override def transform(n: Node): Seq[Node] = n match
-          case elem: Elem if elem.label == "item" => elem.copy( child = elem.child :+ feedImage.asInstanceOf[Elem])
+          case elem: Elem if elem.label == "item" => println(feedImage); elem //elem.copy( child = elem.child :+ feedImage.asInstanceOf[Elem])
           case other => other
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
@@ -116,7 +116,7 @@ object InterfluidityMain extends AbstractMain {
 
   val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800 /*, outputTransformer = onlyMostRecentNPRNewsInOutput */):
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasts"
-    override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
+    override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to which Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
   override val appConfig: AppConfig = AppConfig(
     serverUrl = Abs("https://www.interfluidity.com/"),
