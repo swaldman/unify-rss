@@ -75,8 +75,16 @@ object SubscribedPodcasts:
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
 
+  private def profile[I,O](label:String)(fcn : I => O) : I => O = (input : I) =>
+    val start = System.currentTimeMillis()
+    val out = fcn(input)
+    println(s"${label}: ${System.currentTimeMillis()-start} msecs")
+    out
+
   private val embellishFeed : Elem => Elem =
-    stripItunesSeason andThen prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems
+    profile("embellish subscribed-podcasts")(
+      stripItunesSeason andThen prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems
+    )
 
   def bestAttemptEmbellish(anyTopElem: Elem): Elem =
     val rssElem: Option[Elem] = anyTopElem.label match
