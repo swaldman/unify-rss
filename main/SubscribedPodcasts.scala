@@ -67,17 +67,17 @@ object SubscribedPodcasts:
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
 
-  private def addFeedImageElement(rssElem : Elem) : Elem =
+  def addFeedImageElement(rssElem : Elem) : Elem =
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
-        case elem: Elem if elem.label == "channel" => println("Found channel."); elem.copy( child = feedCoverCoverImageElement.toElem +: elem.child )
+        case elem: Elem if elem.label == "channel" => elem.copy( child = feedCoverCoverImageElement.toElem +: elem.child )
         case other => other
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
 
 
   private def embellishFeed(rssElem: Elem): Elem =
-    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems andThen addFeedImageElement)(rssElem)
+    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
 
   def bestAttemptEmbellish(anyTopElem: Elem): Elem =
     val rssElem: Option[Elem] = anyTopElem.label match
