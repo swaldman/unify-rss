@@ -54,10 +54,10 @@ object InterfluidityMain extends AbstractMain {
 
   def copyItunesImageElementsToItems( rssElem : Elem ) : Elem =
     val mbItunesFeedImage =
-      val queryResult = (rssElem \ "channel").map( _ \ "image").filter( _.asInstanceOf[Elem].prefix == "itunes" )
+      val queryResult = (rssElem \ "channel").flatMap( _ \ "image").filter( _.asInstanceOf[Elem].prefix == "itunes" )
       if queryResult.nonEmpty then Some(queryResult.head) else None
     val mbRegularFeedImage =
-      val queryResult = (rssElem \ "channel").map( _ \ "image").filter( _.asInstanceOf[Elem].prefix == null )
+      val queryResult = (rssElem \ "channel").flatMap( _ \ "image").filter( _.asInstanceOf[Elem].prefix == null )
       if queryResult.nonEmpty then Some(queryResult.head) else None
     val mbFeedImage = mbItunesFeedImage orElse mbRegularFeedImage.map: regularImageElem =>
       val url = (regularImageElem \ "url").head.text.trim
