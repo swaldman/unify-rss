@@ -70,7 +70,7 @@ object SubscribedPodcasts:
   private def addFeedImageElement(rssElem : Elem) : Elem =
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
-        case elem: Elem if elem.label == "channel" => println("Found channel."; elem.copy( child = feedCoverCoverImageElement.toElem +: elem.child )
+        case elem: Elem if elem.label == "channel" => println("Found channel."); elem.copy( child = feedCoverCoverImageElement.toElem +: elem.child )
         case other => other
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
