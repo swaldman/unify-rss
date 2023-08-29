@@ -8,7 +8,7 @@ import scala.xml.transform.*
 import audiofluidity.rss.Element
 
 object SubscribedPodcasts:
-  def prefixTitlesOfItemElem(prefix: String, itemElem: Elem): Elem =
+  private def prefixTitlesOfItemElem(prefix: String, itemElem: Elem): Elem =
     val oldTitleElems = (itemElem \ "title")
     if oldTitleElems.nonEmpty then
       val newChildren = itemElem.child.map: node =>
@@ -20,9 +20,9 @@ object SubscribedPodcasts:
     else
       itemElem.copy(child = itemElem.child :+ Elem("", "title", Null, TopScope, true, Text(prefix + "Untitled Item")))
 
-  val PrefixTransformations = Map("Podcasts" -> "TAP")
+  private val PrefixTransformations = Map("Podcasts" -> "TAP")
 
-  def prependFeedTitleToItemTitles(rssElem: Elem): Elem =
+  private def prependFeedTitleToItemTitles(rssElem: Elem): Elem =
     val feedPrefix =
       val queryResult = (rssElem \ "channel").map(_ \ "title")
       val rawPrefix = queryResult.head.text.trim
@@ -35,7 +35,7 @@ object SubscribedPodcasts:
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
 
-  def copyItunesImageElementsToItems(rssElem: Elem): Elem =
+  private def copyItunesImageElementsToItems(rssElem: Elem): Elem =
     val mbItunesFeedImage =
       val queryResult = (rssElem \ "channel").flatMap(_ \ "image").filter(_.asInstanceOf[Elem].prefix == "itunes")
       if queryResult.nonEmpty then Some(queryResult.head) else None
@@ -57,7 +57,7 @@ object SubscribedPodcasts:
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
 
-  def embellishFeed(rssElem: Elem): Elem =
+  private def embellishFeed(rssElem: Elem): Elem =
     (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
 
   def bestAttemptEmbellish(anyTopElem: Elem): Elem =
