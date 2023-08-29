@@ -65,7 +65,7 @@ object InterfluidityMain extends AbstractMain {
     mbFeedImage.fold(rssElem): feedImage =>
       val rule = new RewriteRule:
         override def transform(n: Node): Seq[Node] = n match
-          case elem: Elem if elem.label == "item" => println(feedImage); elem //elem.copy( child = elem.child :+ feedImage.asInstanceOf[Elem])
+          case elem: Elem if elem.label == "item" => elem.copy( child = elem.child :+ feedImage.asInstanceOf[Elem])
           case other => other
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
