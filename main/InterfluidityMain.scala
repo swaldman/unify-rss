@@ -71,7 +71,7 @@ object InterfluidityMain extends AbstractMain {
       transform(rssElem).asInstanceOf[Elem]
 
   def embellishFeed( rssElem : Elem ) : Elem =
-    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
+    (prependFeedTitleToItemTitles /*andThen copyItunesImageElementsToItems*/)(rssElem)
 
   def bestAttemptEmbellishFeed( anyTopElem : Elem ) : Elem =
     val rssElem : Option[Elem] = anyTopElem.label match 
