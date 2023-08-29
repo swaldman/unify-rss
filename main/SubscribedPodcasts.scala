@@ -11,7 +11,7 @@ object SubscribedPodcasts:
 
   private val FeedCoverUrl = "https://www.interfluidity.com/uploads/2023/08/ripply-river-midjourney-smaller.png"
 
-  private lazy val FeedCoverCoverImageElement =
+  private def feedCoverCoverImageElement =
     val urlElement = Element.Url(location=FeedCoverUrl)
     val titleElement = Element.Title(text=InterfluidityMain.SubscribedPodcastsFeed.title(Nil))
     val linkElement = Element.Link(location="https://www.interfluidity.com/")
@@ -70,7 +70,7 @@ object SubscribedPodcasts:
   private def addFeedImageElement(rssElem : Elem) : Elem =
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
-        case elem: Elem if elem.label == "channel" => elem.copy( child = elem.child :+ FeedCoverCoverImageElement.toElem)
+        case elem: Elem if elem.label == "channel" => println("Found channel."; elem.copy( child = feedCoverCoverImageElement.toElem +: elem.child )
         case other => other
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
