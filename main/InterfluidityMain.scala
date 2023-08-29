@@ -65,13 +65,13 @@ object InterfluidityMain extends AbstractMain {
     mbFeedImage.fold(rssElem): feedImage =>
       val rule = new RewriteRule:
         override def transform(n: Node): Seq[Node] = n match
-          case elem: Elem if elem.label == "item" => elem.copy( child = elem.child ++ feedImage)
+          case elem: Elem if elem.label == "item" => elem.copy( child = elem.child :+ feedImage.asInstanceOf[Elem])
           case other => other
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
 
   def embellishFeed( rssElem : Elem ) : Elem =
-    (prependFeedTitleToItemTitles /*andThen copyItunesImageElementsToItems*/)(rssElem)
+    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
 
   def bestAttemptEmbellishFeed( anyTopElem : Elem ) : Elem =
     val rssElem : Option[Elem] = anyTopElem.label match 
