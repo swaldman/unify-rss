@@ -8,6 +8,16 @@ import scala.xml.transform.*
 import audiofluidity.rss.Element
 
 object SubscribedPodcasts:
+
+  private val FeedCoverUrl = "https://www.interfluidity.com/uploads/2023/08/ripply-river-midjourney-smaller.png"
+
+  private lazy val FeedCoverCoverImageElement =
+    val urlElement = Element.Url(location=FeedCoverUrl)
+    val titleElement = Element.Title(text=InterfluidityMain.SubscribedPodcastsFeed.title(Nil))
+    val linkElement = Element.Link(location="https://www.interfluidity.com/")
+    val descElement = Element.Description(text=InterfluidityMain.SubscribedPodcastsFeed.description(Nil))
+    Element.Image(urlElement,titleElement,linkElement,None,None,Some(descElement))
+
   private def prefixTitlesOfItemElem(prefix: String, itemElem: Elem): Elem =
     val oldTitleElems = (itemElem \ "title")
     if oldTitleElems.nonEmpty then
@@ -57,8 +67,17 @@ object SubscribedPodcasts:
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
 
+  private def addFeedImageElement(rssElem : Elem) : Elem =
+    val rule = new RewriteRule:
+      override def transform(n: Node): Seq[Node] = n match
+        case elem: Elem if elem.label == "channel" => elem.copy( child = elem.child :+ FeedCoverCoverImageElement.toElem)
+        case other => other
+    val transform = new RuleTransformer(rule)
+    transform(rssElem).asInstanceOf[Elem]
+
+
   private def embellishFeed(rssElem: Elem): Elem =
-    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
+    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems andThen addFeedImageElement)(rssElem)
 
   def bestAttemptEmbellish(anyTopElem: Elem): Elem =
     val rssElem: Option[Elem] = anyTopElem.label match
