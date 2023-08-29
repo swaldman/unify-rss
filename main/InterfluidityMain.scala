@@ -5,6 +5,7 @@ import scala.collection.*
 import unstatic.UrlPath.*
 import scala.xml.*
 import scala.xml.transform.*
+import audiofluidity.rss.Element
 
 object InterfluidityMain extends AbstractMain {
 
@@ -36,10 +37,14 @@ object InterfluidityMain extends AbstractMain {
     else
       itemElem.copy( child = itemElem.child :+ Elem("","title",Null,TopScope,true, Text(prefix + "Untitled Item")) )
 
+  val PrefixTransformations = Map( "Podcast" -> "TAP")
+
   def prependFeedTitleToItemTitles( rssElem : Elem ) : Elem =
     val feedPrefix =
       val queryResult = (rssElem \ "channel").map( _ \ "title")
-      if queryResult.nonEmpty then (queryResult.head.text.trim + ": ") else ""
+      val rawPrefix = queryResult.head.text.trim
+      val goodPrefix = PrefixTransformations.getOrElse(rawPrefix, rawPrefix)
+      if queryResult.nonEmpty then (goodPrefix + ": ") else ""
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
         case elem: Elem if elem.label == "item" => prefixTitlesOfItemElem(feedPrefix, elem)
@@ -47,12 +52,33 @@ object InterfluidityMain extends AbstractMain {
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
 
-  def bestAttemptPrependFeedTitleToItemTitle( anyTopElem : Elem ) : Elem =
+  def copyItunesImageElementsToItems( rssElem : Elem ) : Elem =
+    val mbItunesFeedImage =
+      val queryResult = (rssElem \ "channel").map( _ \ "image").filter( _.asInstanceOf[Elem].prefix == "itunes" )
+      if queryResult.nonEmpty then Some(queryResult.head) else None
+    val mbRegularFeedImage =
+      val queryResult = (rssElem \ "channel").map( _ \ "image").filter( _.asInstanceOf[Elem].prefix == null )
+      if queryResult.nonEmpty then Some(queryResult.head) else None
+    val mbFeedImage = mbItunesFeedImage orElse mbRegularFeedImage.map: regularImageElem =>
+      val url = (regularImageElem \ "url").head.text.trim
+      Element.Itunes.Image(href=url).toElem
+    mbFeedImage.fold(rssElem): feedImage =>
+      val rule = new RewriteRule:
+        override def transform(n: Node): Seq[Node] = n match
+          case elem: Elem if elem.label == "item" => elem.copy( child = elem.child ++ feedImage)
+          case other => other
+      val transform = new RuleTransformer(rule)
+      transform(rssElem).asInstanceOf[Elem]
+
+  def embellishFeed( rssElem : Elem ) : Elem =
+    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
+
+  def bestAttemptEmbellishFeed( anyTopElem : Elem ) : Elem =
     val rssElem : Option[Elem] = anyTopElem.label match 
       case "rss" => Some(anyTopElem)
       case "feed" if scopeContains( null, "http://www.w3.org/2005/Atom", anyTopElem.scope ) => Some( rssElemFromAtomFeedElem(anyTopElem) )
       case _ => None
-    rssElem.fold( anyTopElem )( prependFeedTitleToItemTitles )    
+    rssElem.fold( anyTopElem )( embellishFeed )
 
   // there is no need or point to this. NPR helpfully keeps only one news headline item in their feed.
   // i see a zillion copies in Inoreader only because inoreader retains everything it has seen
@@ -72,8 +98,8 @@ object InterfluidityMain extends AbstractMain {
   */
    
   val subscribedPodcatsMetaSources = immutable.Seq(
-    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
-    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF"), eachFeedTransformer = bestAttemptPrependFeedTitleToItemTitle),
+    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts"), eachFeedTransformer = bestAttemptEmbellishFeed),
+    MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF"), eachFeedTransformer = bestAttemptEmbellishFeed),
   )
 
   val AllBlogsFeed = new MergedFeed.Default(baseName = "all-blogs", sourceUrls = allBlogs, itemLimit = 25):
