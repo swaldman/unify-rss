@@ -67,6 +67,24 @@ object SubscribedPodcasts:
       val transform = new RuleTransformer(rule)
       transform(rssElem).asInstanceOf[Elem]
 
+  private def stripItunesSeason( rssElem : Elem ) : Elem =
+    val rule = new RewriteRule:
+      override def transform(n: Node): Seq[Node] = n match
+        case elem: Elem if elem.label == "season" && elem.prefix == "itunes" => NodeSeq.Empty
+        case other => other
+    val transform = new RuleTransformer(rule)
+    transform(rssElem).asInstanceOf[Elem]
+
+  private val embellishFeed : Elem => Elem =
+    stripItunesSeason andThen prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems
+
+  def bestAttemptEmbellish(anyTopElem: Elem): Elem =
+    val rssElem: Option[Elem] = anyTopElem.label match
+      case "rss" => Some(anyTopElem)
+      case "feed" if scopeContains(null, "http://www.w3.org/2005/Atom", anyTopElem.scope) => Some(rssElemFromAtomFeedElem(anyTopElem))
+      case _ => None
+    rssElem.fold(anyTopElem)(embellishFeed)
+
   def addFeedImageElement(rssElem : Elem) : Elem =
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
@@ -75,16 +93,6 @@ object SubscribedPodcasts:
     val transform = new RuleTransformer(rule)
     transform(rssElem).asInstanceOf[Elem]
 
-
-  private def embellishFeed(rssElem: Elem): Elem =
-    (prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems)(rssElem)
-
-  def bestAttemptEmbellish(anyTopElem: Elem): Elem =
-    val rssElem: Option[Elem] = anyTopElem.label match
-      case "rss" => Some(anyTopElem)
-      case "feed" if scopeContains(null, "http://www.w3.org/2005/Atom", anyTopElem.scope) => Some(rssElemFromAtomFeedElem(anyTopElem))
-      case _ => None
-    rssElem.fold(anyTopElem)(embellishFeed)
 
   // there is no need or point to this. NPR helpfully keeps only one news headline item in their feed.
   // i see a zillion copies in Inoreader only because inoreader retains everything it has seen
