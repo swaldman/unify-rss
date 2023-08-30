@@ -7,7 +7,7 @@ Type=simple
 User=unify-rss
 Group=unify-rss
 WorkingDirectory=/home/unify-rss/development/gitproj/unify-rss
-ExecStart=scala-cli --java-opt -Xmx500mb --server=false run main
+ExecStart=scala-cli run --java-opt -Xmx500m --server=false main
 KillMode=mixed
 KillSignal=SIGINT
 TimeoutStopSec=90
