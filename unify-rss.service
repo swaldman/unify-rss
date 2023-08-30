@@ -7,7 +7,12 @@ Type=simple
 User=unify-rss
 Group=unify-rss
 WorkingDirectory=/home/unify-rss/development/gitproj/unify-rss
+
+# we set --server=false to avoid starting an additional, unnecessary
+# "bloop" service, which is useful during development to reduce
+# build times, but unnecessary for a deployed service.
 ExecStart=scala-cli run --java-opt -Xmx500m --server=false main
+
 KillMode=mixed
 KillSignal=SIGINT
 TimeoutStopSec=90
