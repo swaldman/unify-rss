@@ -82,7 +82,7 @@ object SubscribedPodcasts:
     out
 
   private val embellishFeed : Elem => Elem =
-    profile("embellish subscribed-podcasts")(
+    profile("embellish")(
       stripItunesSeason andThen prependFeedTitleToItemTitles andThen copyItunesImageElementsToItems
     )
 
