@@ -3,6 +3,7 @@ package com.mchange.unifyrss
 import scala.collection.*
 import zio.*
 
+import java.io.InputStream
 import java.net.URL
 import audiofluidity.rss.Element
 
@@ -35,7 +36,10 @@ private def errorEmptyRssElement(mf : MergedFeed, location : String, description
   Element.Rss(channel)
 
 def fetchElem( url : URL ) : Task[Elem] =
-  ZIO.attemptBlocking(XML.load(url))
+  ZIO.attemptBlocking{
+    // XML.load(url) // in practice, loading via requests-scala proves more reliable, especially for long documents
+    requests.get.stream( url.toString ).readBytesThrough( XML.load )
+  }
     .mapError( e => new XmlFetchFailure( s"Problem loading: ${url}", e ) )
 
 def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url ).map( sourceUrl.transformer )
