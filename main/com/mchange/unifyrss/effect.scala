@@ -34,7 +34,9 @@ private def errorEmptyRssElement(mf : MergedFeed, location : String, description
   )
   Element.Rss(channel)
 
-def fetchElem( url : URL ) : Task[Elem] = ZIO.attemptBlocking(XML.load(url))
+def fetchElem( url : URL ) : Task[Elem] =
+  ZIO.attemptBlocking(XML.load(url))
+    .mapError( e => new XmlFetchFailure( s"Problem loading: ${url}", e ) )
 
 def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url ).map( sourceUrl.transformer )
 
