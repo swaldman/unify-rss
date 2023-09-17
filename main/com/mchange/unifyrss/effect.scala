@@ -27,7 +27,7 @@ private def errorEmptyRssElement(mf : MergedFeed, location : String, description
   val badFeeds = if mf.sourceUrls.isEmpty then "none" else mf.sourceUrls.map( u => s"'${u.toString}'").mkString(", ")
   val badMetaSources = if mf.metaSources.isEmpty then "none" else mf.metaSources.map( ms => s"'${ms.toString}'").mkString(", ")
   val channel = Element.Channel.create(
-    title = s"ERROR — Failed to merge feeds, problem at location '${location}'. Feeds: [${badFeeds}], MetaSource: [${badMetaSources}]",
+    title = s"ERROR — Failed to merge feeds, problem at location '${location}'. Feeds: [${badFeeds}], MetaSources: [${badMetaSources}]",
     linkUrl = "about:blank",
     description = description,
     items = List.empty

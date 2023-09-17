@@ -81,7 +81,7 @@ object RssMerger:
         case ("podcast", "://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md") => ("podcast", "https://podcastindex.org/namespace/1.0")
         case ("podcast", "://podcastindex.org/namespace/1.0") => ("podcast", "https://podcastindex.org/namespace/1.0")
         case ("psc", "://podlove.org/simple-chapters") => ("psc", "http://podlove.org/simple-chapters")
-        case ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0") => ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0")
+        case ("googleplay", "://www.google.com/schemas/play-podcasts/1.0") => ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0")
         case other => ( prefix, uri )
     }
     val dupKeys = findDupKeys( attempted )
