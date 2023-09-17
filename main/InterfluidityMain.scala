@@ -24,7 +24,7 @@ object InterfluidityMain extends AbstractMain {
     SourceUrl("https://github.com/swaldman.atom"),
   )
 
-  val subscribedPodcatsMetaSources = immutable.Seq(
+  val subscribedPodcastsMetaSources = immutable.Seq(
     MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts"), eachFeedTransformer = SubscribedPodcasts.bestAttemptEmbellish),
     MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF"), eachFeedTransformer = SubscribedPodcasts.bestAttemptEmbellish),
   )
@@ -41,7 +41,7 @@ object InterfluidityMain extends AbstractMain {
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, everything"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks posts to all blogs and microblogs, as well as other activity, by Steve Randy Waldman (interfludity), as well as posts to microblogs that syndicate by RSS."
 
-  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcatsMetaSources, itemLimit = 100, refreshSeconds = 1800, outputTransformer = SubscribedPodcasts.addFeedImageElement):
+  val SubscribedPodcastsFeed = new MergedFeed.Default(baseName = "subscribed-podcasts", metaSources = subscribedPodcastsMetaSources, itemLimit = 100, refreshSeconds = 1800, outputTransformer = SubscribedPodcasts.addFeedImageElement):
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasts"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to which Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
