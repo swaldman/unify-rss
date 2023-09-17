@@ -35,9 +35,12 @@ object SubscribedPodcasts:
   private def prependFeedTitleToItemTitles(rssElem: Elem): Elem =
     val feedPrefix =
       val queryResult = (rssElem \ "channel").map(_ \ "title")
-      val rawPrefix = queryResult.head.text.trim
-      val goodPrefix = PrefixTransformations.getOrElse(rawPrefix, rawPrefix)
-      if queryResult.nonEmpty then (goodPrefix + ": ") else ""
+      if queryResult.nonEmpty then
+        val rawPrefix = queryResult.head.text.trim
+        val goodPrefix = PrefixTransformations.getOrElse(rawPrefix, rawPrefix)
+        (goodPrefix + ": ")
+      else
+        ""
     val rule = new RewriteRule:
       override def transform(n: Node): Seq[Node] = n match
         case elem: Elem if elem.label == "item" => prefixTitlesOfItemElem(feedPrefix, elem)
