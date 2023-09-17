@@ -64,17 +64,42 @@ object RssMerger:
   private def elemNamespaces( accum : List[(String,String)], elems : Seq[Elem] ) : List[(String,String)] =
     elems.foldLeft( accum )( (soFar, next) => namespaces( soFar, next.descendant_or_self.map( _.scope ) ) )
 
-  def extractNamespaces( roots : Elem* ) : Map[String,String] =
-    val raw = elemNamespaces( List.empty, roots )
-    val noDupTups = raw.toSet.filter( _(0) != null )
-    val keys = noDupTups.toSeq.map( _(0) )
-    val dupKeys = keys.groupBy( identity ).filter( (_,v) => v.size > 1 ).keys.toSet
+  private def findDupKeys( namespaces : immutable.Set[(String,String)] ) : Set[String] =
+    val keys = namespaces.toSeq.map( _(0) )
+    keys.groupBy( identity ).filter( (_,v) => v.size > 1 ).keys.toSet
+
+  private def attemptCanonicalizeNamespaces( withDups : immutable.Set[(String,String)] ) : immutable.Set[(String,String)] =
+    val attempted = withDups.map { ( prefix, uri ) =>
+      val normalizedUri =
+        uri.dropWhile( _ != ':' ) // ignore http / https variation
+          .reverse
+          .dropWhile( _ == '/' ) // ignore trailing slashes
+          .reverse
+
+      (prefix, normalizedUri) match
+        case ("atom", "://www.w3.org/2005/Atom") => ("atom", "http://www.w3.org/2005/Atom")
+        case ("podcast", "://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md") => ("podcast", "https://podcastindex.org/namespace/1.0")
+        case ("podcast", "://podcastindex.org/namespace/1.0") => ("podcast", "https://podcastindex.org/namespace/1.0")
+        case ("psc", "://podlove.org/simple-chapters") => ("psc", "http://podlove.org/simple-chapters")
+        case ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0") => ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0")
+        case other => ( prefix, uri )
+    }
+    val dupKeys = findDupKeys( attempted )
     if dupKeys.nonEmpty then
-      val badBindings = noDupTups.filter( (k,v) => dupKeys(k) )
+      val badBindings = withDups.filter( (k,v) => dupKeys(k) )
       throw new IncompatibleDuplicateBindings( badBindings )
     else
-      noDupTups.toMap
-  
+      attempted
+
+  def extractNamespaces( roots : Elem* ) : Map[String,String] =
+    val raw = elemNamespaces( List.empty, roots )
+    val real = raw.toSet.filter( _(0) != null )
+    val dupKeys = findDupKeys( real )
+    if dupKeys.nonEmpty then
+      attemptCanonicalizeNamespaces( real ).toMap
+    else
+      real.toMap
+
   def toText( node : Node ) : String =
     val pp = new PrettyPrinter(120,2)
     pp.format( node )
