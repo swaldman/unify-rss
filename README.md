@@ -62,7 +62,9 @@ I have not yet implemented the serving of those "stub sites" yet though.
 
 ### elsewhere
 
-See [_Building a resilient RSS feed unifier with ZIO_](https://tech.interfluidity.com/2023/07/29/building-a-resilient-rss-feed-unifier-with-zio/index.html).
+See
+* [_Building a resilient RSS feed unifier with ZIO_](https://tech.interfluidity.com/2023/07/29/building-a-resilient-rss-feed-unifier-with-zio/index.html)
+* [_Taking control of podcasts via RSS_](https://tech.interfluidity.com/2023/09/17/taking-control-of-podcasts-via-rss/index.html)
 
 ---
 
