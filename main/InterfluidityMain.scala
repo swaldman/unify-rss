@@ -16,6 +16,7 @@ object InterfluidityMain extends AbstractMain {
   )
 
   val allBlogsAndMicroblogs = allBlogs ++ immutable.Seq(
+    SourceUrl("https://zirk.us/@interfluidity.rss"),
     SourceUrl("https://econtwitter.net/@interfluidity.rss"),
     SourceUrl("https://fosstodon.org/@interfluidity.rss"),
   )
