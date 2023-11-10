@@ -1,0 +1,19 @@
+[Unit]
+Description=schedule regeneration of unify-rss feeds
+
+[Timer]
+# Execute job if it missed a run due to machine being off
+Persistent=true
+
+# execute every 30 mins
+OnCalendar=*:0/30:*
+
+#File describing job to execute
+Unit=unify-rss.service
+
+[Install]
+WantedBy=timers.target
+
+# See e.g. https://opensource.com/article/20/7/systemd-timers
+#          https://fedoramagazine.org/systemd-timers-for-scheduling-tasks/
+	   

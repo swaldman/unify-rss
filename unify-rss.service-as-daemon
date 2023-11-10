@@ -1,5 +1,5 @@
 [Unit]
-Description=Unify-RSS static (re)generation
+Description=Unify-RSS HTTP Service
 After=syslog.target network.target
 
 [Service]
@@ -13,8 +13,15 @@ WorkingDirectory=/home/unify-rss/development/gitproj/unify-rss
 # build times, but unnecessary for a deployed service.
 ExecStart=scala-cli run --java-opt -Xmx1g --server=false main
 
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=90
+Restart=on-failure
+RestartSec=10s
+RestartForceExitStatus=SIGPIPE
 StandardError=journal
 StandardOutput=journal
 StandardInput=null
 
-
+[Install]
+WantedBy=multi-user.target
