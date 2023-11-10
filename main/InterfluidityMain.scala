@@ -6,7 +6,7 @@ import unstatic.UrlPath.*
 import scala.xml.*
 import scala.xml.transform.*
 
-object InterfluidityMain extends AbstractMain {
+object InterfluidityMain extends AbstractDaemonMain {
 
   val allBlogs = immutable.Seq(
     SourceUrl("https://drafts.interfluidity.com/feed/index.rss"),
