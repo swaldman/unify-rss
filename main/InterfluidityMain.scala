@@ -1,12 +1,13 @@
 import com.mchange.unifyrss.*
 
 import java.net.URL
+import java.nio.file.Path
 import scala.collection.*
 import unstatic.UrlPath.*
 import scala.xml.*
 import scala.xml.transform.*
 
-object InterfluidityMain extends AbstractDaemonMain {
+object InterfluidityMain extends AbstractStaticGenMain {
 
   val allBlogs = immutable.Seq(
     SourceUrl("https://drafts.interfluidity.com/feed/index.rss"),
@@ -46,11 +47,13 @@ object InterfluidityMain extends AbstractDaemonMain {
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasts"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to which Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
-  override val appConfig: AppConfig = AppConfig(
+  override val appConfig : AppConfig = AppConfig(
     serverUrl = Abs("https://www.interfluidity.com/"),
-    proxiedPort = Some(8123),
+    proxiedPort = None, // Some(8123) -- since we're statically generating now, no need to proxy from a port
     appPathServerRooted = Rooted("/unify-rss"),
     mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed, EverythingFeed, SubscribedPodcastsFeed),
     verbose = true
   )
+
+  override val appStaticDir : Path = Path.of("/home/web/public/unify-rss-interfluidity")
 }
