@@ -5,6 +5,9 @@ import zio.*
 
 import java.io.InputStream
 import java.net.URL
+import java.nio.file.{Files, Path as JPath}
+import java.lang.System
+
 import audiofluidity.rss.Element
 
 import scala.xml.{Elem, NamespaceBinding, PrettyPrinter, TopScope, XML}
@@ -113,6 +116,19 @@ def bestAttemptMergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq
     .catchAll( t => ZIO.succeed(errorEmptyRssElement(mf, "bestAttemptFetchFeedsOrEmptyFeed", t.toString).bytes) )
 
 def stubSite(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[String] = ZIO.attempt(mf.stubSite(feeds))
+
+def staticGenMergedFeeds( ac : AppConfig, appStaticDir : JPath ) : Task[Unit] =
+  def genFeed( mf : MergedFeed ) =
+    val destPath = appStaticDir.resolve( mf.feedPath.toString )
+    for
+      elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
+      feed  <- bestAttemptMergeFeeds( ac, mf, elems )
+    yield
+      val destPathDir = destPath.getParent
+      if !Files.exists(destPathDir) then Files.createDirectories(destPathDir)
+      Files.write( destPath, feed.toArray )
+      System.err.println(s"Wrote feed to ${destPath}")
+  ZIO.collectAllParDiscard( ac.mergedFeeds.map( genFeed ) )
 
 def initMergedFeedRefs( ac : AppConfig ) : Task[FeedRefMap] =
   def refTup( mf : MergedFeed ) =
