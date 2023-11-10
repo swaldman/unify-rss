@@ -128,7 +128,7 @@ def staticGenMergedFeeds( ac : AppConfig, appStaticDir : JPath ) : Task[Unit] =
       if !Files.exists(destPathDir) then Files.createDirectories(destPathDir)
       Files.write( destPath, feed.toArray )
       System.err.println(s"Wrote feed to ${destPath}")
-  ZIO.collectAllParDiscard( ac.mergedFeeds.map( genFeed ) )
+  ZIO.collectAllParDiscard( ac.mergedFeeds.map( mf => genFeed(mf).logError ) )
 
 def initMergedFeedRefs( ac : AppConfig ) : Task[FeedRefMap] =
   def refTup( mf : MergedFeed ) =
