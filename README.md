@@ -51,7 +51,9 @@ You define a concrete `object` that extends one of these abstract configs, and o
 
 Originally, this application unified feeds and re-served them as a continually running daemon. You can still run it that way!
 Just extend abstract main class [`AbstractDaemonMain`](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/AbstractDaemonMain.scala),
-override the `appConfig` method as described above, then run your application as a long-running service. [Here](https://github.com/swaldman/unify-rss/blob/interfluidity/unify-rss.service-as-daemon)
+override the `appConfig` method as described above, then run your application as a long-running service. 
+
+[Here](https://github.com/swaldman/unify-rss/blob/interfluidity/unify-rss.service-as-daemon)
 for example is a `systemd` unit file I used to use for that purpose.
 
 #### static feed generation
@@ -67,6 +69,10 @@ Define a `systemd` service that runs the app just once, and a `systemd` timer th
 
 Make sure that the `appStaticDir` you specify exists, and is writable by the user your application runs as. Configure your webserver
 to serve those files at the URL you desire.
+
+> [!NOTE]
+> Some config items, like `proxiedPort` and `refreshSeconds` will be ignored if you are generating static files. Use `systemd` or `cron` to refresh feeds by rerunning the app.
+
 
 ### examples
 
