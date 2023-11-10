@@ -48,7 +48,7 @@ def server(ac: AppConfig, mergedFeedRefs: FeedRefMap) : UIO[ExitCode] =
   val zServerEndpoints = allServerEndpoints(ac, fem, mergedFeedRefs)
   val httpApp = toHttpApp(ac, zServerEndpoints)
   Server
-    .serve(httpApp.withDefaultErrorResponse)
+    .serve(httpApp)
     .provide(ZLayer.succeed(Server.Config.default.port(ac.servicePort)), Server.live)
     .exitCode
 

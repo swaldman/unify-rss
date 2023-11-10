@@ -4,7 +4,7 @@ import scala.collection.*
 
 import zio.*
 
-abstract class AbstractMain extends ZIOAppDefault:
+abstract class AbstractDaemonMain extends ZIOAppDefault:
 
   def appConfig : AppConfig
 
