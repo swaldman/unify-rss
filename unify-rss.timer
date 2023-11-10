@@ -2,9 +2,6 @@
 Description=schedule regeneration of unify-rss feeds
 
 [Timer]
-# Execute job if it missed a run due to machine being off
-Persistent=true
-
 # execute every 30 mins
 OnCalendar=*:0/30:*
 
