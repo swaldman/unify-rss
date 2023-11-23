@@ -44,6 +44,12 @@ object RssMerger:
         case ("podcast", "://podcastindex.org/namespace/1.0") => ("podcast", "https://podcastindex.org/namespace/1.0")
         case ("psc", "://podlove.org/simple-chapters") => ("psc", "http://podlove.org/simple-chapters")
         case ("googleplay", "://www.google.com/schemas/play-podcasts/1.0") => ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0")
+        case ("cc", "://blogs.law.harvard.edu/tech/creativeCommonsRssModule") => ("cc", "http://web.resource.org/cc/")
+        case ("cc", "://backend.userland.com/creativeCommonsRssModule") => ("cc", "http://web.resource.org/cc/")
+        case ("cc", "://cyber.law.harvard.edu/rss/creativeCommonsRssModule.html") => ("cc", "http://web.resource.org/cc/")
+        case ("media", "://www.rssboard.org/media-rss") => ("media", "http://search.yahoo.com/mrss/")
+        case ("media", "://search.yahoo.com/rss") => ("media", "http://search.yahoo.com/mrss/")
+        case ("source", "://source.smallpict.com/2014/07/12/theSourceNamespace.html") => ("source", "http://source.scripting.com/")
         case other => ( prefix, uri )
     }
     val dupKeys = findDupKeys( attempted )
