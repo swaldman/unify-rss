@@ -92,7 +92,7 @@ object RssMerger:
       else if pds.length == 1 then
         parsePubDate( pds.head )
       else  
-        System.err.println(s"Expected precisely one 'pubDate' in item, found ${pds.length}:${linesep}${toText(itemElem)}, will use an arbitrar early timestamp!")
+        System.err.println(s"Expected precisely one 'pubDate' in item, found ${pds.length}:${linesep}${toText(itemElem)}, will use an arbitrary early timestamp!")
         stableEarlyInstant( itemElem.toString )
         
     Ordering.by[Elem,Instant]( pubDate ).reverse
