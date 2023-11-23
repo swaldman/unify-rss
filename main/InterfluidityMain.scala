@@ -31,6 +31,10 @@ object InterfluidityMain extends AbstractStaticGenMain {
     MetaSource.OPML(URL("https://www.inoreader.com/reader/subscriptions/export/user/1005956602/label/Podcasts+HF"), eachFeedTransformer = SubscribedPodcasts.bestAttemptEmbellish),
   )
 
+  val daveWinerAllMetaSources = immutable.Seq(
+    MetaSource.OPML(URL("https://feedland.com/opml?screenname=davewiner&catname=All"))
+  )
+  
   val AllBlogsFeed = new MergedFeed.Default(baseName = "all-blogs", sourceUrls = allBlogs, itemLimit = 25):
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, all blogs"
     override def description(rootElems: immutable.Seq[Elem]): String = "Collects posts to all blogs (including the main interfluidity.com, as well as drafts.interfluidity.com and tech.interfluiduty.com) by Steve Randy Waldman"
@@ -47,11 +51,15 @@ object InterfluidityMain extends AbstractStaticGenMain {
     override def title(rootElems: immutable.Seq[Elem]): String = "interfluidity, subscribed podcasts"
     override def description(rootElems: immutable.Seq[Elem]): String = "Tracks the podcasts to which Steve Randy Waldman is subscribed by RSS, to avoid siloing subscriptions in some single app."
 
+  val DaveWinerAllFeed = new MergedFeed.Default(baseName = "dave-winer-all", metaSources = daveWinerAllMetaSources, itemLimit = 100, refreshSeconds = 1800):
+    override def title(rootElems: immutable.Seq[Elem]): String = "Dave Winer subscriptions"
+    override def description(rootElems: immutable.Seq[Elem]): String = "Tracks feeds Dave Winer subscribes to, discovered via http://news.scripting.com/."
+
   override val appConfig : AppConfig = AppConfig(
     serverUrl = Abs("https://www.interfluidity.com/"),
     proxiedPort = None, // Some(8123) -- since we're statically generating now, no need to proxy from a port
     appPathServerRooted = Rooted("/unify-rss"),
-    mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed, EverythingFeed, SubscribedPodcastsFeed),
+    mergedFeeds = immutable.Set(AllBlogsFeed, AllBlogsAndMicroblogsFeed, EverythingFeed, SubscribedPodcastsFeed, DaveWinerAllFeed),
     verbose = true
   )
 
