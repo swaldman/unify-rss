@@ -6,12 +6,13 @@ import scala.collection.*
 import unstatic.UrlPath.*
 import zio.*
 import sttp.tapir.Endpoint
+import audiofluidity.rss.Namespace
 
 val linesep = System.lineSeparator
 
 class UnifyRssException( message : String, cause : Throwable = null ) extends Exception( message, cause )
 
-class IncompatibleDuplicateBindings(bindings : immutable.Set[(String,String)]) extends UnifyRssException(s"Incompatible duplicate bindings! ${bindings}", null)
+class IncompatibleNamespaces(namespaces : immutable.Set[Namespace]) extends UnifyRssException(s"Incompatible namespaces! ${namespaces}", null)
 class BadItemXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class BadAtomXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class XmlFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )

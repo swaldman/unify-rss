@@ -17,57 +17,31 @@ object RssMerger:
   def stableEarlyInstant( s : String ) = Instant.ofEpochMilli(s.hashCode * 1_000_000)
 
   @tailrec
-  private def namespaces( accum : List[(String,String)], binding : NamespaceBinding ) : List[(String,String)] =
-    if binding == TopScope || binding == null then accum else namespaces( (binding.prefix, binding.uri ) :: accum, binding.parent)
+  private def namespaces( accum : List[Namespace], binding : NamespaceBinding ) : List[Namespace] =
+    if binding == TopScope || binding == null then accum else namespaces( Namespace(binding.prefix, binding.uri ) :: accum, binding.parent)
 
-  private def namespaces( accum : List[(String,String)], bindingSeq : Seq[NamespaceBinding] ) : List[(String,String)] =
+  private def namespaces( accum : List[Namespace], bindingSeq : Seq[NamespaceBinding] ) : List[Namespace] =
     bindingSeq.foldLeft( accum )( (soFar, next) => namespaces( soFar, next ) )
 
-  private def elemNamespaces( accum : List[(String,String)], elems : Seq[Elem] ) : List[(String,String)] =
+  private def elemNamespaces( accum : List[Namespace], elems : Seq[Elem] ) : List[Namespace] =
     elems.foldLeft( accum )( (soFar, next) => namespaces( soFar, next.descendant_or_self.map( _.scope ) ) )
 
   private def findDupKeys( namespaces : immutable.Set[(String,String)] ) : Set[String] =
     val keys = namespaces.toSeq.map( _(0) )
     keys.groupBy( identity ).filter( (_,v) => v.size > 1 ).keys.toSet
 
-  private def attemptCanonicalizeNamespaces( withDups : immutable.Set[(String,String)] ) : immutable.Set[(String,String)] =
-    val attempted = withDups.map { ( prefix, uri ) =>
-      val normalizedUri =
-        uri.dropWhile( _ != ':' ) // ignore http / https variation
-          .reverse
-          .dropWhile( _ == '/' ) // ignore trailing slashes
-          .reverse
-
-      (prefix, normalizedUri) match
-        case ("atom", "://www.w3.org/2005/Atom") => ("atom", "http://www.w3.org/2005/Atom")
-        case ("podcast", "://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md") => ("podcast", "https://podcastindex.org/namespace/1.0")
-        case ("podcast", "://podcastindex.org/namespace/1.0") => ("podcast", "https://podcastindex.org/namespace/1.0")
-        case ("psc", "://podlove.org/simple-chapters") => ("psc", "http://podlove.org/simple-chapters")
-        case ("googleplay", "://www.google.com/schemas/play-podcasts/1.0") => ("googleplay", "http://www.google.com/schemas/play-podcasts/1.0")
-        case ("cc", "://blogs.law.harvard.edu/tech/creativeCommonsRssModule") => ("cc", "http://web.resource.org/cc/")
-        case ("cc", "://backend.userland.com/creativeCommonsRssModule") => ("cc", "http://web.resource.org/cc/")
-        case ("cc", "://cyber.law.harvard.edu/rss/creativeCommonsRssModule.html") => ("cc", "http://web.resource.org/cc/")
-        case ("media", "://www.rssboard.org/media-rss") => ("media", "http://search.yahoo.com/mrss/")
-        case ("media", "://search.yahoo.com/rss") => ("media", "http://search.yahoo.com/mrss/")
-        case ("source", "://source.smallpict.com/2014/07/12/theSourceNamespace.html") => ("source", "http://source.scripting.com/")
-        case ("source", "://source.scripting.com") => ("source", "http://source.scripting.com/")
-        case other => ( prefix, uri )
-    }
-    val dupKeys = findDupKeys( attempted )
-    if dupKeys.nonEmpty then
-      val badBindings = withDups.filter( (k,v) => dupKeys(k) )
-      throw new IncompatibleDuplicateBindings( badBindings )
-    else
-      attempted
+  private def findDupPrefixes( namespaces : immutable.Set[Namespace] ) : Set[String] =
+    findDupKeys( namespaces.map( Tuple.fromProductTyped ) )
 
   def extractNamespaces( roots : Elem* ) : Map[String,String] =
     val raw = elemNamespaces( List.empty, roots )
-    val real = raw.toSet.filter( _(0) != null )
-    val dupKeys = findDupKeys( real )
-    if dupKeys.nonEmpty then
-      attemptCanonicalizeNamespaces( real ).toMap
+    val real = raw.toSet.filter( _.prefix != null ).map( _.canonical )
+    val dupPrefixes = findDupPrefixes( real )
+    if dupPrefixes.nonEmpty then
+      val badNamespaces = real.filter{ case Namespace(p,u) => dupPrefixes(p) }
+      throw new IncompatibleNamespaces( badNamespaces )
     else
-      real.toMap
+      real.map( ns => (ns.prefix, ns.uri) ).toMap
 
   def toText( node : Node ) : String =
     val pp = new PrettyPrinter(120,2)
