@@ -50,6 +50,7 @@ object RssMerger:
         case ("media", "://www.rssboard.org/media-rss") => ("media", "http://search.yahoo.com/mrss/")
         case ("media", "://search.yahoo.com/rss") => ("media", "http://search.yahoo.com/mrss/")
         case ("source", "://source.smallpict.com/2014/07/12/theSourceNamespace.html") => ("source", "http://source.scripting.com/")
+        case ("source", "://source.scripting.com") => ("source", "http://source.scripting.com/")
         case other => ( prefix, uri )
     }
     val dupKeys = findDupKeys( attempted )
