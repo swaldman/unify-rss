@@ -39,11 +39,15 @@ final case class SourceUrl( url : URL, transformer : Elem => Elem )
   * MetaSource outputTransformers will reliably see RSS.
   */
 object MetaSource:
-  case class OPML( opmlUrl : URL, opmlTransformer : Elem => Elem = identity, eachFeedTransformer : Elem => Elem = identity ) extends MetaSource:
+  case class OPML( opmlUrl : URL, opmlTransformer : Elem => Elem = identity, eachFeedTransformer : Elem => Elem = identity, urlFilter : String => Boolean = _ => true ) extends MetaSource:
     def sourceUrls : immutable.Seq[SourceUrl] =
-      ( opmlTransformer( XML.load(opmlUrl) ) \\ "outline")
+      val opmlElem =
+        // XML.load(opmlUrl) // in practice, loading via requests-scala proves more reliable, especially for long documents
+        requests.get.stream( opmlUrl.toString ).readBytesThrough( XML.load )
+      ( opmlTransformer( opmlElem ) \\ "outline")
         .map( _ \@ "xmlUrl" )
         .filter( _.nonEmpty)
+        .filter( urlFilter )
         .map( feedUrl => SourceUrl( feedUrl, eachFeedTransformer ) )
 trait MetaSource:
   def sourceUrls : immutable.Seq[SourceUrl]
