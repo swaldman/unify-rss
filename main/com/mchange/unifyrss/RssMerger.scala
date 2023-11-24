@@ -16,32 +16,14 @@ object RssMerger:
 
   def stableEarlyInstant( s : String ) = Instant.ofEpochMilli(s.hashCode * 1_000_000)
 
-  @tailrec
-  private def namespaces( accum : List[Namespace], binding : NamespaceBinding ) : List[Namespace] =
-    if binding == TopScope || binding == null then accum else namespaces( Namespace(binding.prefix, binding.uri ) :: accum, binding.parent)
-
-  private def namespaces( accum : List[Namespace], bindingSeq : Seq[NamespaceBinding] ) : List[Namespace] =
-    bindingSeq.foldLeft( accum )( (soFar, next) => namespaces( soFar, next ) )
-
-  private def elemNamespaces( accum : List[Namespace], elems : Seq[Elem] ) : List[Namespace] =
-    elems.foldLeft( accum )( (soFar, next) => namespaces( soFar, next.descendant_or_self.map( _.scope ) ) )
-
-  private def findDupKeys( namespaces : immutable.Set[(String,String)] ) : Set[String] =
-    val keys = namespaces.toSeq.map( _(0) )
-    keys.groupBy( identity ).filter( (_,v) => v.size > 1 ).keys.toSet
-
-  private def findDupPrefixes( namespaces : immutable.Set[Namespace] ) : Set[String] =
-    findDupKeys( namespaces.map( Tuple.fromProductTyped ) )
-
-  def extractNamespaces( roots : Elem* ) : Map[String,String] =
-    val raw = elemNamespaces( List.empty, roots )
-    val real = raw.toSet.filter( _.prefix != null ).map( _.canonical )
-    val dupPrefixes = findDupPrefixes( real )
-    if dupPrefixes.nonEmpty then
-      val badNamespaces = real.filter{ case Namespace(p,u) => dupPrefixes(p) }
-      throw new IncompatibleNamespaces( badNamespaces )
+  def extractPrefixedNamespaces( roots : Elem* ) : Set[Namespace] =
+    val raw = Namespace.fromElemsRecursive( roots* )
+    val prefixed = raw.toSet.filter( _.prefix != null )
+    val excludingConflicts = Namespace.canonicalizeConflicts( prefixed )
+    if excludingConflicts.excluded.nonEmpty then
+      throw new IncompatibleNamespaces( excludingConflicts.excludedNamespaces )
     else
-      real.map( ns => (ns.prefix, ns.uri) ).toMap
+      excludingConflicts.withUniquePrefixes
 
   def toText( node : Node ) : String =
     val pp = new PrettyPrinter(120,2)
@@ -73,10 +55,9 @@ object RssMerger:
   end ItemOrdering  
 
   def merge(spec : Element.Channel.Spec, itemLimit : Int, roots : Elem* ) : Element.Rss =
-    val allNamespaces = extractNamespaces(roots*)
-    val unscoped = roots.map( stripScopes ).map( _.asInstanceOf[Elem] )
-    val arssNamespaces = allNamespaces.map( (k,v) => Namespace(k,v) ).toList
-    val allItems = unscoped.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
+    val allPrefixedNamespaces = extractPrefixedNamespaces(roots*).toList
+    val noprefixed = roots.map( stripPrefixedNamespaces ).map( _.asInstanceOf[Elem] )
+    val allItems = noprefixed.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
     val limitedItems = allItems.take( itemLimit )
     val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtras( limitedItems )
-    Element.Rss(channel).overNamespaces(arssNamespaces)
+    Element.Rss(channel).overNamespaces(allPrefixedNamespaces)

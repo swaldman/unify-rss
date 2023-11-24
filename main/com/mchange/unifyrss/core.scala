@@ -47,6 +47,23 @@ def stripScopes(root: Node): Node =
   clearScope(root)
 
 @tailrec
+def unprefixedNamespaceOnly( binding : NamespaceBinding ) : NamespaceBinding =
+  binding match
+    case NamespaceBinding(null,   null, null  ) => TopScope
+    case NamespaceBinding(null,   null, parent) => unprefixedNamespaceOnly( parent )
+    case NamespaceBinding(null,    uri, _     ) => NamespaceBinding(null, uri, TopScope)
+    case NamespaceBinding(prefix,    _, null  ) => TopScope
+    case NamespaceBinding(prefix,    _, parent) => unprefixedNamespaceOnly( parent )
+    
+
+def stripPrefixedNamespaces( root : Node ) : Node =
+  def clearPrefixedNamespaces(x: Node): Node = x match {
+    case e: Elem => e.copy(scope = unprefixedNamespaceOnly(e.scope), child = e.child.map(clearPrefixedNamespaces))
+    case o => o
+  }
+  clearPrefixedNamespaces(root)
+
+@tailrec
 def scopeContains( prefix : String, uri : String, binding : NamespaceBinding ) : Boolean =
   if binding == TopScope then
     false
