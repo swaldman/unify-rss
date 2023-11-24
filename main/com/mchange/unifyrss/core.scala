@@ -6,12 +6,13 @@ import scala.collection.*
 import unstatic.UrlPath.*
 import zio.*
 import sttp.tapir.Endpoint
+import audiofluidity.rss.Namespace
 
 val linesep = System.lineSeparator
 
 class UnifyRssException( message : String, cause : Throwable = null ) extends Exception( message, cause )
 
-class IncompatibleDuplicateBindings(bindings : immutable.Set[(String,String)]) extends UnifyRssException(s"Incompatible duplicate bindings! ${bindings}", null)
+class IncompatibleNamespaces(namespaces : immutable.Set[Namespace]) extends UnifyRssException(s"Incompatible namespaces! ${namespaces}", null)
 class BadItemXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class BadAtomXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class XmlFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
@@ -44,6 +45,23 @@ def stripScopes(root: Node): Node =
     case o => o
   }
   clearScope(root)
+
+@tailrec
+def unprefixedNamespaceOnly( binding : NamespaceBinding ) : NamespaceBinding =
+  binding match
+    case NamespaceBinding(null,   null, null  ) => TopScope
+    case NamespaceBinding(null,   null, parent) => unprefixedNamespaceOnly( parent )
+    case NamespaceBinding(null,    uri, _     ) => NamespaceBinding(null, uri, TopScope)
+    case NamespaceBinding(prefix,    _, null  ) => TopScope
+    case NamespaceBinding(prefix,    _, parent) => unprefixedNamespaceOnly( parent )
+    
+
+def stripPrefixedNamespaces( root : Node ) : Node =
+  def clearPrefixedNamespaces(x: Node): Node = x match {
+    case e: Elem => e.copy(scope = unprefixedNamespaceOnly(e.scope), child = e.child.map(clearPrefixedNamespaces))
+    case o => o
+  }
+  clearPrefixedNamespaces(root)
 
 @tailrec
 def scopeContains( prefix : String, uri : String, binding : NamespaceBinding ) : Boolean =
