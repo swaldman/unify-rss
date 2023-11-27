@@ -21,11 +21,6 @@ class CantConvertToRss(message : String, cause : Throwable = null)              
 type FeedRefMap      = immutable.Map[Rel,Ref[immutable.Seq[Byte]]]
 type FeedEndpointMap = immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]]
 
-def fullStackTrace(t:Throwable) : String =
-  val sw = new java.io.StringWriter()
-  t.printStackTrace(new java.io.PrintWriter(sw))
-  sw.toString()
-
 def stripScopes(root: Node): Node =
   // didn't work, namespaces reappeared, don't understand why exactly,
   // i think maybe it's because we want to keep the prefixes in attributed
