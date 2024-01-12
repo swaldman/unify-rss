@@ -9,6 +9,9 @@ import java.nio.file.{Files, Path as JPath}
 import java.lang.System
 
 import audiofluidity.rss.Element
+import audiofluidity.rss.atom.rssElemFromAtomFeedElem
+import audiofluidity.rss.util.scopeContains
+
 
 import scala.xml.{Elem, NamespaceBinding, PrettyPrinter, TopScope, XML}
 import unstatic.UrlPath.*

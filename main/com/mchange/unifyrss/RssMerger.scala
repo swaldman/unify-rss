@@ -10,7 +10,7 @@ import scala.util.{Try,Success,Failure}
 import scala.annotation.tailrec
 
 import audiofluidity.rss.*
-import audiofluidity.rss.util.attemptLenientParsePubDateToInstant
+import audiofluidity.rss.util.*
 
 object RssMerger:
 
