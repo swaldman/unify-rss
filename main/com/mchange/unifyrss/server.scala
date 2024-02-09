@@ -43,14 +43,14 @@ def allServerEndpoints(dc: DaemonConfig, fem: FeedEndpointMap, mergedFeedRefs: F
 def toHttpApp(dc: DaemonConfig, zServerEndpoints: List[ZServerEndpoint[Any, Any]]) =
   ZioHttpInterpreter(interpreterOptions(dc.verbose)).toHttp(zServerEndpoints)
 
-def server(dc: DaemonConfig, mergedFeedRefs: FeedRefMap) : UIO[ExitCode] =
+def server(dc: DaemonConfig, mergedFeedRefs: FeedRefMap) : Task[Nothing] =
   val fem = feedEndpoints( dc )
   val zServerEndpoints = allServerEndpoints(dc, fem, mergedFeedRefs)
   val httpApp = toHttpApp(dc, zServerEndpoints)
   Server
     .serve(httpApp)
     .provide(ZLayer.succeed(Server.Config.default.port(dc.servicePort)), Server.live)
-    .exitCode
+
 
 
 

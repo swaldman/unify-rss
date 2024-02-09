@@ -107,31 +107,34 @@ def elemToBytes( elem : Elem ) : immutable.Seq[Byte] =
   val text = s"<?xml version='1.0' encoding='UTF-8'?>\n${pp.format(elem)}"
   immutable.ArraySeq.ofByte(text.getBytes(scala.io.Codec.UTF8.charSet))
 
-def mergeFeeds(dc : DaemonConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
-  val spec = Element.Channel.Spec(mf.title(feeds), dc.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
+def mergeFeeds(bc : BaseConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
+  val spec = Element.Channel.Spec(mf.title(feeds), bc.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
   val rssElement = RssMerger.merge(spec, mf.itemLimit, feeds*)
   val xformed = mf.outputTransformer( rssElement.toElem )
   elemToBytes( xformed )
 
-def bestAttemptMergeFeeds(dc : DaemonConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : UIO[immutable.Seq[Byte]] =
-  mergeFeeds(dc, mf, feeds)
+def bestAttemptMergeFeeds(bc : BaseConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : UIO[immutable.Seq[Byte]] =
+  mergeFeeds(bc, mf, feeds)
     .logError
     .catchAll( t => ZIO.succeed(errorEmptyRssElement(mf, "bestAttemptFetchFeedsOrEmptyFeed", t.toString).bytes) )
 
 def stubSite(dc : DaemonConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[String] = ZIO.attempt(mf.stubSite(feeds))
 
-def staticGenMergedFeeds( dc : DaemonConfig, appStaticDir : JPath ) : Task[Unit] =
+def staticGenMergedFeeds( bc : BaseConfig, appStaticDir : JPath ) : Task[Unit] =
   def genFeed( mf : MergedFeed ) =
     val destPath = appStaticDir.resolve( mf.feedPath.toString )
     for
       elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
-      feed  <- bestAttemptMergeFeeds( dc, mf, elems )
+      feed  <- bestAttemptMergeFeeds( bc, mf, elems )
     yield
       val destPathDir = destPath.getParent
       if !Files.exists(destPathDir) then Files.createDirectories(destPathDir)
       Files.write( destPath, feed.toArray )
       System.err.println(s"Wrote feed to ${destPath}")
-  ZIO.collectAllParDiscard( dc.mergedFeeds.map( mf => genFeed(mf).logError ) )
+  ZIO.collectAllParDiscard( bc.mergedFeeds.map( mf => genFeed(mf).logError ) )
+
+def staticGenMergedFeeds( sgc : StaticGenConfig ) : Task[Unit] =
+  staticGenMergedFeeds(sgc, sgc.appStaticDir)
 
 def initMergedFeedRefs( dc : DaemonConfig ) : Task[FeedRefMap] =
   def refTup( mf : MergedFeed ) =

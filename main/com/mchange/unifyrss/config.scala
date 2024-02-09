@@ -5,8 +5,36 @@ import scala.collection.*
 import scala.xml.{Elem,XML}
 import java.net.URL
 import unstatic.UrlPath.*
+import java.nio.file.{Path as JPath}
 
-case class DaemonConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed], verbose : Boolean = false ):
+trait BaseConfig:
+  /**
+    * URLPath.Abs resolving to the directory from which rss will be served, either as static files or from memory by the daemon
+    */
+  def appPathAbs : Abs
+
+
+  /**
+    * The set of feeds (merged from multiple sources) to serve
+    */
+  def mergedFeeds : immutable.Set[MergedFeed]
+
+
+  /**
+    * Set to true for more verbose logging
+    */
+  def verbose : Boolean
+end BaseConfig
+
+/**
+  * @param appPathAbs URLPath.Abs resolving to the directory from which rss will be served, either as static files or from memory by the daemon
+  * @param appStaticDir Directory into which static files will be generated, from which they will be served
+  * @param mergedFeeds The set of feeds (merged from multiple sources) to serve
+  * @param verbose Set to true for more verbose logging
+  */
+case class StaticGenConfig( appPathAbs : Abs, appStaticDir : JPath, mergedFeeds : immutable.Set[MergedFeed], verbose : Boolean = false ) extends BaseConfig
+
+case class DaemonConfig( serverUrl : Abs, proxiedPort : Option[Int], appPathServerRooted : Rooted, mergedFeeds : immutable.Set[MergedFeed], verbose : Boolean = false ) extends BaseConfig:
   def appPathAbs : Abs = serverUrl.embedRoot(appPathServerRooted)
   def servicePort =
     def fromUrlOrDefault : Int =
