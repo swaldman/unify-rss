@@ -107,54 +107,54 @@ def elemToBytes( elem : Elem ) : immutable.Seq[Byte] =
   val text = s"<?xml version='1.0' encoding='UTF-8'?>\n${pp.format(elem)}"
   immutable.ArraySeq.ofByte(text.getBytes(scala.io.Codec.UTF8.charSet))
 
-def mergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
-  val spec = Element.Channel.Spec(mf.title(feeds), ac.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
+def mergeFeeds(dc : DaemonConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
+  val spec = Element.Channel.Spec(mf.title(feeds), dc.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
   val rssElement = RssMerger.merge(spec, mf.itemLimit, feeds*)
   val xformed = mf.outputTransformer( rssElement.toElem )
   elemToBytes( xformed )
 
-def bestAttemptMergeFeeds(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : UIO[immutable.Seq[Byte]] =
-  mergeFeeds(ac, mf, feeds)
+def bestAttemptMergeFeeds(dc : DaemonConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : UIO[immutable.Seq[Byte]] =
+  mergeFeeds(dc, mf, feeds)
     .logError
     .catchAll( t => ZIO.succeed(errorEmptyRssElement(mf, "bestAttemptFetchFeedsOrEmptyFeed", t.toString).bytes) )
 
-def stubSite(ac : AppConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[String] = ZIO.attempt(mf.stubSite(feeds))
+def stubSite(dc : DaemonConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[String] = ZIO.attempt(mf.stubSite(feeds))
 
-def staticGenMergedFeeds( ac : AppConfig, appStaticDir : JPath ) : Task[Unit] =
+def staticGenMergedFeeds( dc : DaemonConfig, appStaticDir : JPath ) : Task[Unit] =
   def genFeed( mf : MergedFeed ) =
     val destPath = appStaticDir.resolve( mf.feedPath.toString )
     for
       elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
-      feed  <- bestAttemptMergeFeeds( ac, mf, elems )
+      feed  <- bestAttemptMergeFeeds( dc, mf, elems )
     yield
       val destPathDir = destPath.getParent
       if !Files.exists(destPathDir) then Files.createDirectories(destPathDir)
       Files.write( destPath, feed.toArray )
       System.err.println(s"Wrote feed to ${destPath}")
-  ZIO.collectAllParDiscard( ac.mergedFeeds.map( mf => genFeed(mf).logError ) )
+  ZIO.collectAllParDiscard( dc.mergedFeeds.map( mf => genFeed(mf).logError ) )
 
-def initMergedFeedRefs( ac : AppConfig ) : Task[FeedRefMap] =
+def initMergedFeedRefs( dc : DaemonConfig ) : Task[FeedRefMap] =
   def refTup( mf : MergedFeed ) =
     for
       elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
-      feed  <- bestAttemptMergeFeeds( ac, mf, elems )
+      feed  <- bestAttemptMergeFeeds( dc, mf, elems )
       ref   <- Ref.make(feed).logError  // let's be sure to see if anything goes wrong
     yield (mf.feedPath, ref)
-  val tupEffects = ac.mergedFeeds.map( refTup )
+  val tupEffects = dc.mergedFeeds.map( refTup )
   ZIO.mergeAll(tupEffects)( immutable.Map.empty[Rel,Ref[immutable.Seq[Byte]]] )( (accum, next) => accum + next )
 
-def updateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : FeedRefMap ) : Task[Unit] =
+def updateMergedFeedRef( dc : DaemonConfig, mf : MergedFeed, mergedFeedRefs : FeedRefMap ) : Task[Unit] =
   for
     elems <- bestAttemptFetchFeedsOrEmptyFeed(mf)
-    feed  <- bestAttemptMergeFeeds(ac, mf, elems)
+    feed  <- bestAttemptMergeFeeds(dc, mf, elems)
     _     <- mergedFeedRefs(mf.feedPath).set(feed)
   yield ()
 
-def periodicallyResilientlyUpdateMergedFeedRef( ac : AppConfig, mf : MergedFeed, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) : Task[Long] =
+def periodicallyResilientlyUpdateMergedFeedRef( dc : DaemonConfig, mf : MergedFeed, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) : Task[Long] =
   val refreshDuration = Duration.fromSeconds(mf.refreshSeconds)
-  val resilient = updateMergedFeedRef( ac, mf, mergedFeedRefs ).logError.retry( retrySchedule( refreshDuration ) ) // let's be sure to see if anything goes wrong
+  val resilient = updateMergedFeedRef( dc, mf, mergedFeedRefs ).logError.retry( retrySchedule( refreshDuration ) ) // let's be sure to see if anything goes wrong
   resilient.schedule( Schedule.fixed( refreshDuration ) )
 
-def periodicallyResilientlyUpdateAllMergedFeedRefs( ac : AppConfig, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) =
-  val allForks = ac.mergedFeeds.map( mf => periodicallyResilientlyUpdateMergedFeedRef( ac, mf, mergedFeedRefs ).forkDaemon )
+def periodicallyResilientlyUpdateAllMergedFeedRefs( dc : DaemonConfig, mergedFeedRefs : immutable.Map[Rel,Ref[immutable.Seq[Byte]]] ) =
+  val allForks = dc.mergedFeeds.map( mf => periodicallyResilientlyUpdateMergedFeedRef( dc, mf, mergedFeedRefs ).forkDaemon )
   ZIO.collectAllDiscard( allForks )

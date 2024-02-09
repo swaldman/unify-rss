@@ -6,12 +6,12 @@ import zio.*
 
 abstract class AbstractDaemonMain extends ZIOAppDefault:
 
-  def appConfig : AppConfig
+  def daemonConfig : DaemonConfig
 
   override def run =
     for
-      mergedFeedRefs   <- initMergedFeedRefs( appConfig )
-      _                <- periodicallyResilientlyUpdateAllMergedFeedRefs( appConfig, mergedFeedRefs )
-      _                <- ZIO.logInfo(s"Starting up unify-rss server on port ${appConfig.servicePort}")
-      exitCode         <- server( appConfig, mergedFeedRefs )
+      mergedFeedRefs   <- initMergedFeedRefs( daemonConfig )
+      _                <- periodicallyResilientlyUpdateAllMergedFeedRefs( daemonConfig, mergedFeedRefs )
+      _                <- ZIO.logInfo(s"Starting up unify-rss server on port ${daemonConfig.servicePort}")
+      exitCode         <- server( daemonConfig, mergedFeedRefs )
     yield exitCode

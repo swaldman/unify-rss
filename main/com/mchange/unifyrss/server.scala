@@ -37,19 +37,19 @@ def feedZServerEndpoint(feedPath: Rel, fem: FeedEndpointMap, mergedFeedRefs: Fee
   val logic = feedServerLogic(feedPath, mergedFeedRefs)
   endpoint.zServerLogic[Any](logic)
 
-def allServerEndpoints(ac: AppConfig, fem: FeedEndpointMap, mergedFeedRefs: FeedRefMap) =
-  ac.mergedFeeds.map(mf => feedZServerEndpoint(mf.feedPath, fem, mergedFeedRefs)).toList
+def allServerEndpoints(dc: DaemonConfig, fem: FeedEndpointMap, mergedFeedRefs: FeedRefMap) =
+  dc.mergedFeeds.map(mf => feedZServerEndpoint(mf.feedPath, fem, mergedFeedRefs)).toList
 
-def toHttpApp(ac: AppConfig, zServerEndpoints: List[ZServerEndpoint[Any, Any]]) =
-  ZioHttpInterpreter(interpreterOptions(ac.verbose)).toHttp(zServerEndpoints)
+def toHttpApp(dc: DaemonConfig, zServerEndpoints: List[ZServerEndpoint[Any, Any]]) =
+  ZioHttpInterpreter(interpreterOptions(dc.verbose)).toHttp(zServerEndpoints)
 
-def server(ac: AppConfig, mergedFeedRefs: FeedRefMap) : UIO[ExitCode] =
-  val fem = feedEndpoints( ac )
-  val zServerEndpoints = allServerEndpoints(ac, fem, mergedFeedRefs)
-  val httpApp = toHttpApp(ac, zServerEndpoints)
+def server(dc: DaemonConfig, mergedFeedRefs: FeedRefMap) : UIO[ExitCode] =
+  val fem = feedEndpoints( dc )
+  val zServerEndpoints = allServerEndpoints(dc, fem, mergedFeedRefs)
+  val httpApp = toHttpApp(dc, zServerEndpoints)
   Server
     .serve(httpApp)
-    .provide(ZLayer.succeed(Server.Config.default.port(ac.servicePort)), Server.live)
+    .provide(ZLayer.succeed(Server.Config.default.port(dc.servicePort)), Server.live)
     .exitCode
 
 

@@ -17,12 +17,12 @@ private def endpointForFixedPath( serverRootedPath : Rooted ) : Endpoint[Unit, U
   else
     serverRootedPath.elements.foldLeft(endpoint.get)( (accum, next) => accum.in( next ) )
 
-def feedEndpoint( ac : AppConfig, mf : MergedFeed ) : Endpoint[Unit,Unit,String,Array[Byte],Any] =
-  endpointForFixedPath( ac.appPathServerRooted.resolve(mf.feedPath) )
+def feedEndpoint( dc : DaemonConfig, mf : MergedFeed ) : Endpoint[Unit,Unit,String,Array[Byte],Any] =
+  endpointForFixedPath( dc.appPathServerRooted.resolve(mf.feedPath) )
     .out(header(Header.contentType(MediaTypeRss)))
     .out(byteArrayBody)
     .errorOut(stringBody(CharsetUTF8))
     .out(header(Header.contentType(MediaType.TextPlain.charset(CharsetUTF8))))
 
-def feedEndpoints( ac : AppConfig ) : immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]] =
-  ac.mergedFeeds.map( mf => (mf.feedPath, feedEndpoint(ac,mf)) ).toMap
+def feedEndpoints( dc : DaemonConfig ) : immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]] =
+  dc.mergedFeeds.map( mf => (mf.feedPath, feedEndpoint(dc,mf)) ).toMap
