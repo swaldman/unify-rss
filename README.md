@@ -13,78 +13,43 @@ You can specify source feeds directly and/or subscribe to
 [OPML feeds](https://indieweb.org/OPML), which the application will follow as the source list changes
 dynamically over time.
 
-### buildless
+### library + script
 
-I thought this would be a very casual project, and it has been.
-It's scala, but it's written in an almost "buildless" style.
-The directory [`main`](https://github.com/swaldman/unify-rss/tree/main/main)
-is just a package root, with a top-level file called `scala-cli-build.scala`
-that sets options and brings in dependencies.
+_unify_rss_ is most easily run in [library + script](https://tech.interfluidity.com/2023/11/14/library--script-vs-application--config-file/index.html) style.
 
-The idea is you just type
+You'll [find the library on Maven Central](https://central.sonatype.com/artifact/com.mchange/unify-rss_3).
 
-```bash
-$ scala-cli main
-```
+In a [scala-cli](https://scala-cli.virtuslab.org/) script, just configure your application just by building
+either a `StaticGenConfig` or `DaemonConfig` object.
 
-and it runs. But not quite.
+In either case, the heart of your definition will be a `Set` of `MergedFeed` objects.
+Each merged feed can be constituted of any number of individual RSS feeds, or sources of RSS feeds
+like OPML feeds.
 
-### configless
+Once you have defined your config object, your script simply runs a method of the `ScriptEntry`.
 
-I'm a big fan of just using Scala code (usually case classes)
-for config.
-
-Past projects (See [`audiofluidity`](https://github.com/swaldman/audiofluidity-rss))
-had handrolled logic to compile changed config scala files on execution.
-Now `scala-cli` takes care of that nicely. So. 
-
-We define an abstract class with a main functon ([two](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/AbstractStaticGenMain.scala)
-[actually](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/AbstractDaemonMain.scala)!), and with an abstract `appConfig` method
-that wants an [AppConfig](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/config.scala) object.
-
-You define a concrete `object` that extends one of these abstract configs, and overrides the abstract `appConfig` method (usually with a `val`).
-
-[`AppConfig`](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/config.scala) is a `case class`, the heart of which is a set of
-`MergedFeed` objects, in which you define the feeds you wish to unify into one.
+And that's it!
 
 #### serve feeds as a daemon
 
-Originally, this application unified feeds and re-served them as a continually running daemon. You can still run it that way!
-Just extend abstract main class [`AbstractDaemonMain`](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/AbstractDaemonMain.scala),
-override the `appConfig` method as described above, then run your application as a long-running service. 
+You can periodically merge feeds in memory and have a daemon serve them. Just call `ScriptEntry.startupDaemon( daemonConfig : DaemonCofig )`.
 
-[Here](https://github.com/swaldman/unify-rss/blob/interfluidity/unify-rss.service-as-daemon)
-for example is a `systemd` unit file I used to use for that purpose.
+You'll usually deploy your script with _systemd_, a `Type=simple` daemon.
 
 #### static feed generation
 
-However, if you are using `systemd` anyway, an alternative approach is to generate your feeds into static files, and use a `systemd` timer to periodically
-refresh them. This is more economical, as you don't need to occupy a server with a continually running JVM server process, which may have a big memory
-footprint.
+You can generate merged feeds as static files, to be served as static files. Just call `ScriptEntry.performStaticGen( sgc: StaticGenConfig )`.
 
-Extend abstract main class [`AbstractStaticGenMain`](https://github.com/swaldman/unify-rss/blob/main/main/com/mchange/unifyrss/AbstractStaticGenMain.scala),
-override `appConfig` and also `appStaticDir` method, which will be the directory feeds get generated into.
-
-Define a `systemd` service that runs the app just once, and a `systemd` timer that periodically refreshes it.
-
-Make sure that the `appStaticDir` you specify exists, and is writable by the user your application runs as. Configure your webserver
-to serve those files at the URL you desire.
-
-> [!NOTE]
-> Some config items, like `proxiedPort` and `refreshSeconds` will be ignored if you are generating static files. Use `systemd` or `cron` to refresh feeds by rerunning the app.
-
+You'll usually deploy your script with _systemd_, a `Type=simple` service that will run, regenerate your feeds, then simply die. 
+Use a _systemd_ timer to periodically rerun and regenerate your feeds.
 
 ### examples
 
-Check out the [_interfluidity_](https://github.com/swaldman/unify-rss/tree/interfluidity)
-branch, and the object [`InterfluidityMain`](https://github.com/swaldman/unify-rss/blob/interfluidity/main/InterfluidityMain.scala) to see how this works.
-You'll see exactly how feeds are configured there.
-
-In the _interfluidity_ branch you can also see the [`systemd` service file](https://github.com/swaldman/unify-rss/blob/interfluidity/unify-rss.service)
-by which I am currently running this service, and the [`systemd` timer file](https://github.com/swaldman/unify-rss/blob/interfluidity/unify-rss.timer) 
-that reruns it every 30 mins. 
-
-(There are shell-scripts as well, but they are obsolete.)
+You can find a (rather complicated, alas) example
+[script](https://github.com/swaldman/unify-rss-interfluidity/blob/main/unify-rss-interfluidity) with
+_systemd_ [unit](https://github.com/swaldman/unify-rss-interfluidity/blob/main/unify-rss.service) and
+[timer](https://github.com/swaldman/unify-rss-interfluidity/blob/main/unify-rss.timer)
+files [here](https://github.com/swaldman/unify-rss-interfluidity).
 
 ### shortcomings
 
