@@ -8,4 +8,14 @@
 //> using dep "com.lihaoyi::requests:0.8.0"
 //> using options "-deprecation"
 
+//> using publish.organization "com.mchange"
+//> using publish.name "unify-rss"
+//> using publish.version "0.0.1"
+//> using publish.url "https://github.com/swaldman/unify-rss"
+//> using publish.developer "swaldman|Steve Waldman|https://github.com/swaldman"
+//> using publish.versionControl "github:swaldman/unify-rss"
+//> using publish.license "GPL-3.0"
+//> using publish.repository "central"
+
+
 
