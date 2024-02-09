@@ -18,7 +18,7 @@ object RssMerger:
 
   def extractPrefixedNamespaces( roots : Elem* ) : Set[Namespace] =
     val raw = Namespace.fromElemsRecursive( roots* )
-    val prefixed = raw.toSet.filter( _.prefix != null )
+    val prefixed = raw.toSet.filter( _.prefix != None )
     val excludingConflicts = Namespace.canonicalizeConflicts( prefixed )
     if excludingConflicts.excluded.nonEmpty then
       throw new IncompatibleNamespaces( excludingConflicts.excludedNamespaces )
@@ -38,21 +38,21 @@ object RssMerger:
            System.err.println(t.toString)
            System.err.println(s"Found unparsable date: ${str}, using an arbitrary very early date.")
            stableEarlyInstant(str)
-      
+
     def pubDate( itemElem : Elem ) : Instant =
       val pds = (itemElem \ "pubDate").map( _.text )
       if pds.length > 1 then
         //throw BadItemXml(s"Expected precisely one 'pubDate' in item, found ${pds.length}:${linesep}${toText(itemElem)}")
         System.err.println(s"Expected precisely one 'pubDate' in item, found ${pds.length}:${linesep}${toText(itemElem)}, will use first.")
-        parsePubDate( pds.head )  
+        parsePubDate( pds.head )
       else if pds.length == 1 then
         parsePubDate( pds.head )
-      else  
+      else
         System.err.println(s"Expected precisely one 'pubDate' in item, found ${pds.length}:${linesep}${toText(itemElem)}, will use an arbitrary early timestamp!")
         stableEarlyInstant( itemElem.toString )
-        
+
     Ordering.by[Elem,Instant]( pubDate ).reverse
-  end ItemOrdering  
+  end ItemOrdering
 
   def merge(spec : Element.Channel.Spec, itemLimit : Int, roots : Elem* ) : Element.Rss =
     val allPrefixedNamespaces = extractPrefixedNamespaces(roots*).toList
