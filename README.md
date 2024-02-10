@@ -15,14 +15,15 @@ dynamically over time.
 
 ### library + script
 
-_unify_rss_ is most easily run in [library + script](https://tech.interfluidity.com/2023/11/14/library--script-vs-application--config-file/index.html) style.
+_unify rss_ is most easily run in [library + script](https://tech.interfluidity.com/2023/11/14/library--script-vs-application--config-file/index.html) style.
 
 You'll [find the library on Maven Central](https://central.sonatype.com/artifact/com.mchange/unify-rss_3).
 
 In a [scala-cli](https://scala-cli.virtuslab.org/) script, just configure your application just by building
-either a `StaticGenConfig` or `DaemonConfig` object.
+either a [`StaticGenConfig`](https://javadoc.io/static/com.mchange/unify-rss_3/0.0.2/com/mchange/unifyrss/StaticGenConfig.html) or [`DaemonConfig`](https://javadoc.io/static/com.mchange/unify-rss_3/0.0.2/com/mchange/unifyrss/DaemonConfig.html) object.
 
-In either case, the heart of your definition will be a `Set` of `MergedFeed` objects.
+In either case, the heart of your definition will be a `Set` of [`MergedFeed`](https://javadoc.io/static/com.mchange/unify-rss_3/0.0.2/com/mchange/unifyrss/MergedFeed.html) objects.
+`MergedFeed` is a `trait`; the class [`MergedFeed.Default`](https://javadoc.io/static/com.mchange/unify-rss_3/0.0.2/com/mchange/unifyrss/MergedFeed$$Default.html) provides a convenient implementation
 Each merged feed can be constituted of any number of individual RSS feeds, or sources of RSS feeds
 like OPML feeds.
 
