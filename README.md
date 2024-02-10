@@ -27,7 +27,7 @@ In either case, the heart of your definition will be a `Set` of [`MergedFeed`](h
 Each merged feed can be constituted of any number of individual RSS feeds, or sources of RSS feeds
 like OPML feeds.
 
-Once you have defined your config object, your script simply runs a method of the `ScriptEntry`.
+Once you have defined your config object, your script simply runs a method of the [`ScriptEntry`](https://javadoc.io/static/com.mchange/unify-rss_3/0.0.2/com/mchange/unifyrss/ScriptEntry$.html).
 
 And that's it!
 
