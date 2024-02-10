@@ -13,12 +13,10 @@ trait BaseConfig:
     */
   def appPathAbs : Abs
 
-
   /**
     * The set of feeds (merged from multiple sources) to serve
     */
   def mergedFeeds : immutable.Set[MergedFeed]
-
 
   /**
     * Set to true for more verbose logging
