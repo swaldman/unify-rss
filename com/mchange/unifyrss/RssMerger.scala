@@ -59,5 +59,6 @@ object RssMerger:
     val noprefixed = roots.map( stripPrefixedNamespaces ).map( _.asInstanceOf[Elem] )
     val allItems = noprefixed.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
     val limitedItems = allItems.take( itemLimit )
-    val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtras( limitedItems )
+    val atomSelfLink = Element.Atom.Link(href=mergedFeedUrl,rel=Some(Element.Atom.LinkRelation.self),`type`=Some("application/rss+xml")) // see https://www.rssboard.org/rss-profile#namespace-elements-atom-link
+    val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtra(atomSelfLink).withExtras( limitedItems )
     Element.Rss(channel).overNamespaces(allPrefixedNamespaces)
