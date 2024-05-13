@@ -10,7 +10,7 @@ import java.lang.System
 
 import audiofluidity.rss.Element
 import audiofluidity.rss.atom.rssElemFromAtomFeedElem
-import audiofluidity.rss.util.scopeContains
+import audiofluidity.rss.util.scopeContainsRaw
 
 
 import scala.xml.{Elem, NamespaceBinding, PrettyPrinter, TopScope, XML}
@@ -79,7 +79,7 @@ def elemToRssElem( elem : Elem ) : Elem =
   if elem.prefix == null then // we expect no prefix on top-level elements
     elem.label match
       case "rss" => elem
-      case "feed" if scopeContains( null, "http://www.w3.org/2005/Atom", elem.scope ) => rssElemFromAtomFeedElem(elem)
+      case "feed" if scopeContainsRaw( null, "http://www.w3.org/2005/Atom", elem.scope ) => rssElemFromAtomFeedElem(elem)
       case _ => throw CantConvertToRss(s"Unknown feed type with label '${elem.label}' and scope '${elem.scope}'")
   else
     throw new CantConvertToRss (
@@ -109,7 +109,7 @@ def elemToBytes( elem : Elem ) : immutable.Seq[Byte] =
 
 def mergeFeeds(bc : BaseConfig, mf : MergedFeed, feeds : immutable.Seq[Elem]) : Task[immutable.Seq[Byte]] = ZIO.attempt:
   val spec = Element.Channel.Spec(mf.title(feeds), bc.appPathAbs.resolve(mf.stubSitePath).toString, mf.description(feeds))
-  val rssElement = RssMerger.merge(spec, mf.itemLimit, feeds*)
+  val rssElement = RssMerger.merge(bc.appPathAbs.resolve(mf.feedPath).toString, spec, mf.itemLimit, feeds*)
   val xformed = mf.outputTransformer( rssElement.toElem )
   elemToBytes( xformed )
 

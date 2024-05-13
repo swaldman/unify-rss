@@ -54,7 +54,7 @@ object RssMerger:
     Ordering.by[Elem,Instant]( pubDate ).reverse
   end ItemOrdering
 
-  def merge(spec : Element.Channel.Spec, itemLimit : Int, roots : Elem* ) : Element.Rss =
+  def merge(mergedFeedUrl : String, spec : Element.Channel.Spec, itemLimit : Int, roots : Elem* ) : Element.Rss =
     val allPrefixedNamespaces = extractPrefixedNamespaces(roots*).toList
     val noprefixed = roots.map( stripPrefixedNamespaces ).map( _.asInstanceOf[Elem] )
     val allItems = noprefixed.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
