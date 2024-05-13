@@ -13,10 +13,11 @@ val linesep = System.lineSeparator
 class UnifyRssException( message : String, cause : Throwable = null ) extends Exception( message, cause )
 
 class IncompatibleNamespaces(namespaces : immutable.Set[Namespace]) extends UnifyRssException(s"Incompatible namespaces! ${namespaces}", null)
-class BadItemXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
+class BadRssXml(message : String, cause : Throwable = null)                    extends UnifyRssException( message, cause )
+class BadItemXml(message : String, cause : Throwable = null)                   extends BadRssXml( message, cause )
 class BadAtomXml(message : String, cause : Throwable = null)                   extends UnifyRssException( message, cause )
 class XmlFetchFailure(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
-class CantConvertToRss(message : String, cause : Throwable = null)              extends UnifyRssException( message, cause )
+class CantConvertToRss(message : String, cause : Throwable = null)             extends UnifyRssException( message, cause )
 
 type FeedRefMap      = immutable.Map[Rel,Ref[immutable.Seq[Byte]]]
 type FeedEndpointMap = immutable.Map[Rel,Endpoint[Unit,Unit,String,Array[Byte],Any]]

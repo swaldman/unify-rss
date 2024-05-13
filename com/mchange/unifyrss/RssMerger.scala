@@ -5,6 +5,7 @@ import java.time.Instant
 import scala.xml.*
 import scala.xml.transform.*
 import scala.collection.*
+import scala.util.control.NonFatal
 import scala.util.{Try,Success,Failure}
 
 import scala.annotation.tailrec
@@ -54,11 +55,54 @@ object RssMerger:
     Ordering.by[Elem,Instant]( pubDate ).reverse
   end ItemOrdering
 
+  def embedReplaceProvenance( item : Elem, href : String ) : Elem =
+    def viaLink = Element.Atom.Link(href=href,rel=Some(Element.Atom.LinkRelation.via),`type`=Some("application/rss+xml"))
+    val newItem =
+      val provenances = (item \ "provenance").filter( _.prefix == "iffy" )
+      if provenances.nonEmpty then
+        if provenances.size > 1 then
+          System.err.println("Found an item with more than one 'iffy:provenance' element. Will drop all but the first!")
+        val newProvenance =
+          val provenance = provenances.head.asInstanceOf[Elem]
+          provenance.copy( child = (viaLink.toElem +: provenance.child) )
+        val newChildren = item.child.filterNot( n => provenances.contains(n) ) :+ newProvenance
+        item.copy( child = newChildren )
+      else
+        item.copy( child = item.child :+ Element.Iffy.Provenance(viaLink::Nil).toElem )
+    newItem
+
+  def embedProvenance( root : Elem ) : Elem =
+    val origChannel = (root \ "channel").headOption.getOrElse( throw new BadRssXml("Expected a channel, found none.") ).asInstanceOf[Elem]
+    val atomSelfLinks =
+      (origChannel \ "link")
+        .collect { case elem : scala.xml.Elem if elem.prefix == "atom" => elem }
+        .filter( _ \@ "rel" == "self" )
+    if atomSelfLinks.length != 1 then
+      System.err.println("No unique atom:link with rel=\"self\" found in channel. Cannot embed provenance.");
+      root
+    else
+      val href = atomSelfLinks.head \@ "href"
+      val items = (origChannel \ "item")
+      val newItems = items.map( elem => embedReplaceProvenance(elem.asInstanceOf[Elem],href) )
+      val newChannelChildren = origChannel.filterNot( n => items.contains(n) ) ++ newItems
+      val newChannel = origChannel.copy( child = newChannelChildren )
+      val newRssChildren = root.child.filterNot( _ == newChannel ) :+ newChannel
+      root.copy( child = newRssChildren )
+
+  def attemptEmbedProvenance( root : Elem ) : Elem =
+    try embedProvenance( root )
+    catch
+      case NonFatal(e) =>
+        System.err.println("An Exception occurred while trying to embed provenance. Skipping.")
+        e.printStackTrace()
+        root
+
   def merge(mergedFeedUrl : String, spec : Element.Channel.Spec, itemLimit : Int, roots : Elem* ) : Element.Rss =
     val allPrefixedNamespaces = extractPrefixedNamespaces(roots*).toList
     val noprefixed = roots.map( stripPrefixedNamespaces ).map( _.asInstanceOf[Elem] )
-    val allItems = noprefixed.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
+    val withProvenances = noprefixed.map( attemptEmbedProvenance )
+    val allItems = withProvenances.flatMap( _ \\ "item" ).map( _.asInstanceOf[Elem] ).sorted(ItemOrdering)
     val limitedItems = allItems.take( itemLimit )
     val atomSelfLink = Element.Atom.Link(href=mergedFeedUrl,rel=Some(Element.Atom.LinkRelation.self),`type`=Some("application/rss+xml")) // see https://www.rssboard.org/rss-profile#namespace-elements-atom-link
     val channel = Element.Channel.create(spec, Iterable.empty[Element.Item]).withExtra(atomSelfLink).withExtras( limitedItems )
-    Element.Rss(channel).overNamespaces(allPrefixedNamespaces)
+    Element.Rss(channel).overNamespaces(allPrefixedNamespaces :+ Namespace.Iffy) // Namespace.Iffy for provenance element
