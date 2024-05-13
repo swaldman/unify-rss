@@ -55,6 +55,9 @@ object RssMerger:
     Ordering.by[Elem,Instant]( pubDate ).reverse
   end ItemOrdering
 
+  extension ( ns : NodeSeq )
+    def stripElem(prefix : String, label : String) : NodeSeq = ns.collect { case el : Elem if el.prefix != prefix || el.label != label => el; case n if !n.isInstanceOf[Elem] => n }
+
   def embedReplaceProvenance( item : Elem, href : String ) : Elem =
     def viaLink = Element.Atom.Link(href=href,rel=Some(Element.Atom.LinkRelation.via),`type`=Some("application/rss+xml"))
     val newItem =
@@ -65,7 +68,7 @@ object RssMerger:
         val newProvenance =
           val provenance = provenances.head.asInstanceOf[Elem]
           provenance.copy( child = (viaLink.toElem +: provenance.child) )
-        val newChildren = item.child.filterNot( n => provenances.contains(n) ) :+ newProvenance
+        val newChildren = item.child.stripElem("iffy", "provenance") :+ newProvenance
         item.copy( child = newChildren )
       else
         item.copy( child = item.child :+ Element.Iffy.Provenance(viaLink::Nil).toElem )
@@ -84,9 +87,9 @@ object RssMerger:
       val href = atomSelfLinks.head \@ "href"
       val items = (origChannel \ "item")
       val newItems = items.map( elem => embedReplaceProvenance(elem.asInstanceOf[Elem],href) )
-      val newChannelChildren = origChannel.filterNot( n => items.contains(n) ) ++ newItems
+      val newChannelChildren = origChannel.child.stripElem(null, "item") ++ newItems
       val newChannel = origChannel.copy( child = newChannelChildren )
-      val newRssChildren = root.child.filterNot( _ == newChannel ) :+ newChannel
+      val newRssChildren = root.child.stripElem(null, "channel") :+ newChannel
       root.copy( child = newRssChildren )
 
   def attemptEmbedProvenance( root : Elem ) : Elem =
