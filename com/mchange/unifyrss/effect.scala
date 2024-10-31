@@ -24,6 +24,8 @@ private val InitLongestRetry = 600.seconds
 private val QuickRetryPeriod = 6.seconds
 private val QuickRetryLimit  = 60.seconds
 
+private val bestAttemptFetchTimeout = 60.seconds
+
 def retrySchedule( normalRefresh : Duration, firstErrorRetry : Duration = FirstErrorRetry ) =
   Schedule.exponential( firstErrorRetry, ExponentialBackoffFactor ) || Schedule.fixed( normalRefresh )
 
@@ -53,6 +55,7 @@ def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url )
 def bestAttemptFetchElem(sourceUrl : SourceUrl) : Task[Option[Elem]] =
   fetchElem(sourceUrl)
     .logError
+    .timeoutFail(new Exception(s"Attempt to fetch '${sourceUrl}' timed out after ${bestAttemptFetchTimeout}."))( bestAttemptFetchTimeout )
     .retry( quickRetrySchedule )
     .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${sourceUrl.url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
 
