@@ -43,14 +43,14 @@ private def errorEmptyRssElement(mf : MergedFeed, location : String, description
   )
   Element.Rss(channel)
 
-def fetchElem( url : URL ) : Task[Elem] =
+private def fetchElem( url : URL ) : Task[Elem] =
   ZIO.attemptBlocking{
     // XML.load(url) // in practice, loading via requests-scala proves more reliable, especially for long documents
     requests.get.stream( url.toString ).readBytesThrough( XML.load )
   }
     .mapError( e => new XmlFetchFailure( s"Problem loading: ${url}", e ) )
 
-def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url ).map( sourceUrl.transformer )
+private def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceUrl.url ).map( sourceUrl.transformer )
 
 def bestAttemptFetchElem(sourceUrl : SourceUrl) : Task[Option[Elem]] =
   fetchElem(sourceUrl)
