@@ -10,7 +10,7 @@
 
 //> using publish.organization "com.mchange"
 //> using publish.name "unify-rss"
-//> using publish.version "0.0.6"
+//> using publish.version "0.0.7"
 
 //> using publish.url "https://github.com/swaldman/unify-rss"
 //> using publish.developer "swaldman|Steve Waldman|https://github.com/swaldman"
