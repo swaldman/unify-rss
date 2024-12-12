@@ -2,9 +2,9 @@
 //> using dep "org.scala-lang.modules::scala-xml:2.3.0"
 //> using dep "com.mchange::audiofluidity-rss:0.1.0"
 //> using dep "com.mchange::unstatic:0.3.2"
-//> using dep "dev.zio::zio:2.1.11"
-//> using dep "com.softwaremill.sttp.tapir::tapir-zio:1.11.7"
-//> using dep "com.softwaremill.sttp.tapir::tapir-zio-http-server:1.11.7"
+//> using dep "dev.zio::zio:2.1.13"
+//> using dep "com.softwaremill.sttp.tapir::tapir-zio:1.11.10"
+//> using dep "com.softwaremill.sttp.tapir::tapir-zio-http-server:1.11.10"
 //> using dep "com.lihaoyi::requests:0.9.0"
 //> using options "-deprecation"
 
