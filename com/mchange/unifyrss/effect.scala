@@ -55,6 +55,7 @@ private def fetchElem( sourceUrl : SourceUrl ) : Task[Elem] = fetchElem( sourceU
 def bestAttemptFetchElem(sourceUrl : SourceUrl) : Task[Option[Elem]] =
   fetchElem(sourceUrl)
     .logError
+    .disconnect // fetchElem(...) sometimes fails to interrupt, see https://zio.dev/reference/error-management/recovering/timing-out/
     .timeoutFail(new Exception(s"Attempt to fetch '${sourceUrl}' timed out after ${bestAttemptFetchTimeout}."))( bestAttemptFetchTimeout )
     .retry( quickRetrySchedule )
     .foldCauseZIO(cause => ZIO.logCause(s"Problem loading feed '${sourceUrl.url}'", cause) *> ZIO.succeed(None), elem => ZIO.succeed(Some(elem)))
